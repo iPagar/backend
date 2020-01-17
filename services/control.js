@@ -238,43 +238,36 @@ function updateRatings(student, id, semester) {
 			let sum = 0;
 			let sumFactor = 0;
 
-			subjects
-				.filter(
-					mark =>
-						mark.subject !== "ФК" &&
-						mark.subject !== "Физическая культура" &&
-						mark.subject !== "Прикладная физическая культура"
-				)
-				.map(subject => {
-					let sumFactorSubject = 0;
-					let sumSubject = 0;
+			subjects.map(subject => {
+				let sumFactorSubject = 0;
+				let sumSubject = 0;
 
-					const factor = parseFloat(subject.factor);
+				const factor = parseFloat(subject.factor);
 
-					Object.keys(subject.marks).map(module => {
-						const value = subject.marks[module];
+				Object.keys(subject.marks).map(module => {
+					const value = subject.marks[module];
 
-						if (module === "М1") {
-							sumFactorSubject += 3;
-							sumSubject += value * 3;
-						} else if (module === "М2") {
-							sumFactorSubject += 2;
-							sumSubject += value * 2;
-						} else if (module === "З") {
-							sumFactorSubject += 5;
-							sumSubject += value * 5;
-						} else if (module === "К") {
-							sumFactorSubject += 5;
-							sumSubject += value * 5;
-						} else if (module === "Э") {
-							sumFactorSubject += 7;
-							sumSubject += value * 7;
-						}
-					});
-
-					sumFactor += factor;
-					sum += (sumSubject / sumFactorSubject) * factor;
+					if (module === "М1") {
+						sumFactorSubject += 3;
+						sumSubject += value * 3;
+					} else if (module === "М2") {
+						sumFactorSubject += 2;
+						sumSubject += value * 2;
+					} else if (module === "З") {
+						sumFactorSubject += 5;
+						sumSubject += value * 5;
+					} else if (module === "К") {
+						sumFactorSubject += 5;
+						sumSubject += value * 5;
+					} else if (module === "Э") {
+						sumFactorSubject += 7;
+						sumSubject += value * 7;
+					}
 				});
+
+				sumFactor += factor;
+				sum += (sumSubject / sumFactorSubject) * factor;
+			});
 
 			const rating = (sum /= sumFactor);
 

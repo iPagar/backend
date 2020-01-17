@@ -145,7 +145,7 @@ function getMarks(id, semester) {
 function getRating(semester, search, offset) {
 	return new Promise((resolve, reject) =>
 		pool.query(
-			`with allratings as (select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, ratings.rating, ratings.semester from students inner join ratings on ratings.id = students.id where semester = ($1) ) select distinct number, id, stgroup, rating from allratings where lower(surname) like CONCAT('%', trim(lower($2)),'%') OR lower(stgroup) like CONCAT('%', trim(lower($2)),'%') OR CAST(id AS TEXT) LIKE CAST(($2) AS TEXT) order by number asc limit 10 offset ($3) * 10`,
+			`with allratings as (select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, ratings.rating, ratings.semester from students inner join ratings on ratings.id = students.id where semester = ($1) AND stgroup not like CONCAT('%', 'Тест','%') ) select distinct number, id, stgroup, rating from allratings where lower(surname) like CONCAT('%', trim(lower($2)),'%') OR lower(stgroup) like CONCAT('%', trim(lower($2)),'%') OR CAST(id AS TEXT) LIKE CAST(($2) AS TEXT) order by number asc limit 10 offset ($3) * 10`,
 			[semester, search, offset],
 			(error, results) => {
 				if (error) {
