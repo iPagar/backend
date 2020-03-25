@@ -7,6 +7,7 @@ const pool = new Pool({
 	port: 5432
 });
 
+//moduli
 function getStudent(id) {
 	return new Promise((resolve, reject) =>
 		pool.query(
@@ -25,7 +26,7 @@ function getStudent(id) {
 function getStudentsBySemester(semester) {
 	return new Promise((resolve, reject) =>
 		pool.query(
-			"SELECT DISTINCT student, password, students.id, students.notify FROM marks INNER JOIN students ON students.id = marks.id WHERE semester = ($1)",
+			"SELECT DISTINCT student, password, students.id, students.notify FROM marks INNER JOIN students ON students.id = marks.id WHERE semester = ($1) AND stgroup not like CONCAT('%', 'Тест','%')",
 			[semester],
 			(error, results) => {
 				if (error) {
@@ -115,7 +116,7 @@ function createMark(id, semester, subject, module, value, factor) {
 function createRating(id, semester, rating) {
 	return new Promise((resolve, reject) =>
 		pool.query(
-			"INSERT INTO ratings VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+			"INSERT INTO ratings VALUES ($1, $2, $3) ON CONFLICT (id, semester) DO UPDATE SET rating = EXCLUDED.rating",
 			[id, semester, rating],
 			(error, results) => {
 				if (error) {
@@ -202,6 +203,97 @@ function getLastSemesters() {
 	);
 }
 
+//dating
+function discoverDaters(id) {
+	return new Promise((resolve, reject) =>
+		pool.query(
+			"SELECT id FROM students LEFT JOIN likes ON students.id = from_id WHERE id != ($1) order by random() limit 1",
+			[id],
+			(error, results) => {
+				if (error) {
+					return reject(error);
+				}
+				return resolve(results.rows[0]);
+			}
+		)
+	);
+}
+
+function createLike(from_id, to_id) {
+	return new Promise((resolve, reject) =>
+		pool.query(
+			"INSERT INTO likes VALUES ($1, $2)",
+			[from_id, to_id],
+			(error, results) => {
+				if (error) {
+					return reject(error);
+				}
+				return resolve(results.rows);
+			}
+		)
+	);
+}
+
+function matches(id) {
+	return new Promise((resolve, reject) =>
+		pool.query(
+			"SELECT * FROM likes WHERE to_id = ($1) OR from_id = ($1)",
+			[id],
+			(error, results) => {
+				if (error) {
+					return reject(error);
+				}
+				return resolve(results.rows);
+			}
+		)
+	);
+}
+
+function getMessages(to_id, from_id) {
+	return new Promise((resolve, reject) =>
+		pool.query(
+			"SELECT * FROM messages WHERE to_id = ($1) OR from_id = ($2)",
+			[to_id, from_id],
+			(error, results) => {
+				if (error) {
+					return reject(error);
+				}
+				return resolve(results.rows);
+			}
+		)
+	);
+}
+
+function sendMessage(from_id, to_id, text) {
+	return new Promise((resolve, reject) =>
+		pool.query(
+			"INSERT INTO messages VALUES(($1), ($2), ($3))",
+			[from_id, to_id, text],
+			(error, results) => {
+				if (error) {
+					return reject(error);
+				}
+				return resolve(results.rows);
+			}
+		)
+	);
+}
+
+function readMessage(to_id, id) {
+	return new Promise((resolve, reject) =>
+		pool.query(
+			"UPDATE messages SET read = TRUE WHERE to_id = ($1) AND id = ($2)",
+			[to_id, id],
+			(error, results) => {
+				if (error) {
+					return reject(error);
+				}
+				return resolve(results.rows);
+			}
+		)
+	);
+}
+
 module.exports = {
 	createMark,
 	createSemester,
@@ -215,5 +307,11 @@ module.exports = {
 	getRatingStgroup,
 	getLastSemesters,
 	getStudentsBySemester,
-	notify
+	notify,
+	discoverDaters,
+	createLike,
+	matches,
+	getMessages,
+	sendMessage,
+	readMessage
 };

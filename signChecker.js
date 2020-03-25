@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 const createError = require("http-errors");
 
-const key = process.env.VK_SECURE;
+const keys = [process.env.VK_SECURE_MODULI, process.env.VK_SECURE_DATING];
 
 function ksort(query) {
 	return query
@@ -17,6 +17,22 @@ function ksort(query) {
 		}, {});
 }
 
+function hash(sign, str, key) {
+	let hash = crypto
+		.createHmac("sha256", key)
+		.update(str)
+		.digest("base64")
+		.split("+")
+		.join("-")
+		.split("/")
+		.join("_")
+		.replace("=", "");
+
+	if (hash === sign) {
+		return true;
+	} else return false;
+}
+
 function checkSign(req, res, next) {
 	const query = req.headers[`x-sign-header`];
 	let params = ksort(query);
@@ -29,17 +45,7 @@ function checkSign(req, res, next) {
 	}, "?");
 	str = str.substring(1, str.length - 1);
 
-	let hash = crypto
-		.createHmac("sha256", key)
-		.update(str)
-		.digest("base64")
-		.split("+")
-		.join("-")
-		.split("/")
-		.join("_")
-		.replace("=", "");
-
-	if (hash === sign) {
+	if (keys.some(key => hash(sign, str, key))) {
 		delete req.body.sign;
 		req.body = { params, ...req.body };
 		next();
