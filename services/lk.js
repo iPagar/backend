@@ -15,7 +15,8 @@ function getMarks(student, password, semester) {
 			password: password,
 			semester: semester
 		},
-		json: true
+		json: true,
+		timeout: 100
 	};
 
 	if (student >= 999000 && student <= 999999)
@@ -41,12 +42,130 @@ function getMarks(student, password, semester) {
 				}
 			]);
 		});
-	else
+	else if (student === 11606522 && semester === "2020-осень") {
+		return Promise.resolve([
+			{
+				factor: 3,
+				title: "Теоретические основы ИИТ",
+				num: "М1",
+				value: 30
+			},
+			{ factor: 4, title: "Прикладная метрология", num: "М1", value: 35 },
+			{
+				factor: 3,
+				title: "Компьютерные технологии в приборостроении",
+				num: "М1",
+				value: 50
+			},
+			{
+				factor: 3.5,
+				title: "Методы и средства измерений, испытаний и контроля",
+				num: "М1",
+				value: 36
+			},
+			{
+				factor: 3,
+				title: "Физическая и прикладная оптика",
+				num: "М1",
+				value: 0
+			},
+			{
+				factor: 3,
+				title: "Физическая и прикладная оптика",
+				num: "М2",
+				value: 25
+			},
+			{
+				factor: 3,
+				title: "Физическая и прикладная оптика",
+				num: "З",
+				value: 50
+			},
+			{
+				factor: 4,
+				title: "Технология разработки стандартов",
+				num: "М1",
+				value: 41
+			},
+			{
+				factor: 4,
+				title: "Технология разработки стандартов",
+				num: "М2",
+				value: 50
+			},
+			{
+				factor: 4,
+				title: "Технология разработки стандартов",
+				num: "Э",
+				value: 50
+			},
+			{ factor: 3, title: "Теоретические основы ИИТ", num: "М2", value: 50 },
+			{ factor: 3, title: "Теоретические основы ИИТ", num: "Э", value: 50 },
+			{ factor: 4, title: "Прикладная метрология", num: "М2", value: 50 },
+			{ factor: 4, title: "Прикладная метрология", num: "Э", value: 50 },
+			{
+				factor: 3,
+				title: "Компьютерные технологии в приборостроении",
+				num: "М2",
+				value: 52
+			},
+			{
+				factor: 3,
+				title: "Компьютерные технологии в приборостроении",
+				num: "Э",
+				value: 50
+			},
+			{
+				factor: 3,
+				title: "Системы экологического управления предприятием",
+				num: "М1",
+				value: 45
+			},
+			{
+				factor: 3,
+				title: "Системы экологического управления предприятием",
+				num: "М2",
+				value: 50
+			},
+			{
+				factor: 3,
+				title: "Системы экологического управления предприятием",
+				num: "З",
+				value: 50
+			},
+			{
+				factor: 3.5,
+				title: "Методы и средства измерений, испытаний и контроля",
+				num: "М2",
+				value: 50
+			},
+			{
+				factor: 3.5,
+				title: "Методы и средства измерений, испытаний и контроля",
+				num: "К",
+				value: 30
+			},
+			{
+				factor: 3.5,
+				title: "Методы и средства измерений, испытаний и контроля",
+				num: "З",
+				value: 50
+			},
+			{ factor: 3, title: "Правоведение", num: "М1", value: 30 },
+			{ factor: 3, title: "Правоведение", num: "М2", value: 50 },
+			{ factor: 3, title: "Правоведение", num: "З", value: 30 },
+			{
+				factor: 1,
+				title:
+					"Производственная практика, практика по получению профессиональных умений и опыта профессиональной деятельности",
+				num: "З",
+				value: 48
+			}
+		]);
+	} else
 		return rp(options).then(marks =>
 			marks.filter(
-				mark =>
-					mark.title !== "Рейтинг" &&
-					mark.title !== "Накопленный Рейтинг"
+				mark => mark.title !== "Рейтинг" && mark.title !== "Накопленный Рейтинг"
 			)
 		);
 }
@@ -59,7 +178,8 @@ function getSemesters(student, password) {
 			student: student,
 			password: password
 		},
-		json: true
+		json: true,
+		timeout: 100
 	};
 
 	if (student >= 999000 && student <= 999999)
@@ -77,7 +197,8 @@ function getStudent(student, password) {
 			student: student,
 			password: password
 		},
-		json: true
+		json: true,
+		timeout: 100
 	};
 
 	if (student >= 999000 && student <= 999999)

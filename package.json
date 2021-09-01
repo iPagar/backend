@@ -4,24 +4,35 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "env=development port=8088 nodemon index.js",
+    "prod": "env=production nodemon index.js",
+    "start": "env=development nodemon index.js",
     "test": "node test.js"
   },
   "dependencies": {
     "app-root-path": "^3.0.0",
+    "async": "^3.2.0",
     "cors": "^2.8.5",
-    "easyvk": "^2.5.1",
+    "dotenv": "^8.2.0",
+    "easyvk": "^2.8.2",
     "express": "^4.16.4",
-    "express-validator": "^6.3.1",
-    "http-errors": "^1.7.3",
-    "morgan": "^1.9.1",
-    "node-vk-bot-api": "^2.4.11",
-    "pg": "^7.11.0",
-    "request-promise": "^4.2.4",
-    "winston": "^3.2.1"
+    "express-validator": "^6.8.0",
+    "express-winston": "^4.1.0",
+    "helmet": "^3.23.3",
+    "http-errors": "^1.8.0",
+    "manager-schedule": "git+https://github.com/iPagar/manager-schedule.git",
+    "manager-teachers": "github:iPagar/manager-teachers",
+    "morgan": "^1.10.0",
+    "morgan-body": "^2.6.5",
+    "node-cron": "^2.0.3",
+    "node-vk-bot-api": "^3.3.4",
+    "pg": "^8.5.1",
+    "request-promise": "^4.2.6",
+    "text-table": "^0.2.0",
+    "vkui-sign-checker": "^2.0.1",
+    "winston": "^3.3.3"
   },
   "devDependencies": {
-    "nodemon": "^1.19.0"
+    "nodemon": "^1.19.4"
   },
   "author": "",
   "license": "ISC"
