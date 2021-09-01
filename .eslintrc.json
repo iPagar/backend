@@ -7,7 +7,6 @@
   "extends": [
     "airbnb-base",
     "plugin:node/recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "prettier"
   ],
@@ -15,5 +14,8 @@
   "parserOptions": {
     "ecmaVersion": 12
   },
-  "rules": { "prettier/prettier": "error" }
+  "rules": {
+    "prettier/prettier": "error",
+    "@typescript-eslint/no-var-requires": 0
+  }
 }
