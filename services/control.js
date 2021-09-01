@@ -1,20 +1,16 @@
-const db = require("./queries");
-const lk = require("../services/lk");
-//sheduler
-const cron = require("node-cron");
-const Markup = require("node-vk-bot-api/lib/markup");
-const VkBot = require("node-vk-bot-api");
-
-const rp = require("request-promise");
+const cron = require('node-cron');
+const Markup = require('node-vk-bot-api/lib/markup');
+const VkBot = require('node-vk-bot-api');
+const rp = require('request-promise');
+const db = require('./queries');
+const lk = require('./lk');
 
 const bot = new VkBot({
   token: process.env.VK_BOT,
 });
 
-const async = require("async");
-
-//running a task every hour
-cron.schedule("0 * * * *", () => {
+// running a task every hour
+cron.schedule('0 * * * *', () => {
   update();
 });
 
@@ -23,7 +19,7 @@ async function checkAllowedMessages(students) {
     // if (students[i].student === 318219)
     console.log(i);
     const options = {
-      method: "POST",
+      method: 'POST',
       uri: `https://api.vk.com/method/messages.isMessagesFromGroupAllowed?group_id=183639424&user_id=${students[i].id}&v=5.126&access_token=${process.env.VK_BOT}`,
       json: true,
     };
@@ -71,7 +67,7 @@ function update() {
           });
         });
       }
-      console.log("vse");
+      console.log('vse');
     })
     .catch((err) => console.log(err));
 }
@@ -79,11 +75,11 @@ function update() {
 async function updateStudent(semester, stud, isLast) {
   const { student, password, id, notify } = stud;
 
-  //updating semesters list
+  // updating semesters list
   try {
     await updateSemesters(student, password, id);
 
-    //update student settings
+    // update student settings
     await lk.getStudent(student, password).then((response) => {
       const { surname, initials, stgroup } = response;
 
@@ -98,10 +94,10 @@ async function updateStudent(semester, stud, isLast) {
     });
     await updateRatings(id, semester);
   } catch (e) {
-    console.log(student, e.statusCode, "lk.getStudent");
+    console.log(student, e.statusCode, 'lk.getStudent');
   }
 
-  //update marks
+  // update marks
   try {
     const updatedMarks = await updateMarksBySemester(
       semester,
@@ -110,7 +106,7 @@ async function updateStudent(semester, stud, isLast) {
       id
     );
 
-    //update rating
+    // update rating
     await updateRatings(id, semester);
 
     if (updatedMarks.length) console.log(student, updatedMarks);
@@ -125,13 +121,13 @@ async function updateStudent(semester, stud, isLast) {
       await bot.sendMessage(id, notifyText.text, null, notifyText.keyboard);
     }
   } catch (e) {
-    console.log(e, "lk.getMarks");
+    console.log(e, 'lk.getMarks');
     // return updateStudent(semester, stud, isLast);
   }
 }
 
 async function makeNotifyText(id, updatedMarks, semester, isLast) {
-  let text = "";
+  let text = '';
 
   if (updatedMarks.length && !isLast) text += `${semester}\n\n`;
 
@@ -155,13 +151,13 @@ async function makeNotifyText(id, updatedMarks, semester, isLast) {
     }
   }
 
-  sortedMarks.map((sortedMark) => {
+  sortedMarks.foreach((sortedMark) => {
     text += `${sortedMark.subject}\n`;
 
-    const length = Object.keys(sortedMark.marks).length;
-    sortedModules = Object.keys(sortedMark.marks)
+    const { length } = Object.keys(sortedMark.marks);
+    Object.keys(sortedMark.marks)
       .sort()
-      .map((module, i) => {
+      .foreach((module, i) => {
         if (length > 1 && i < length - 1)
           text += `${module}: ${sortedMark.marks[module]}, `;
         else text += `${module}: ${sortedMark.marks[module]}\n\n`;
@@ -174,13 +170,13 @@ async function makeNotifyText(id, updatedMarks, semester, isLast) {
     [
       Markup.button({
         action: {
-          type: "open_app",
-          app_id: "7010368",
-          label: "Смотреть оценки",
+          type: 'open_app',
+          app_id: '7010368',
+          label: 'Смотреть оценки',
           payload: JSON.stringify({
-            url: "https://vk.com/stankin.moduli#marks",
+            url: 'https://vk.com/stankin.moduli#marks',
           }),
-          hash: "marks",
+          hash: 'marks',
         },
       }),
     ],
@@ -200,110 +196,22 @@ async function updateMarksBySemester(semester, student, password, id) {
   const prevMarks = await db.getMarks(id, semester);
 
   try {
-    // let newMarks = [
-    // 	{
-    // 		factor: 3,
-    // 		title: "Безопасность жизнедеятельности",
-    // 		num: "М2",
-    // 		value: 0,
-    // 	},
-    // 	{
-    // 		factor: 3.5,
-    // 		title: "Компьютерные технологии в приборостроении",
-    // 		num: "Э",
-    // 		value: 0,
-    // 	},
-    // 	{ factor: 3, title: "Компьютерная микроскопия", num: "Э", value: 0 },
-    // 	{
-    // 		factor: 3,
-    // 		title: "Экономическое обоснование инженерных решений",
-    // 		num: "Э",
-    // 		value: 0,
-    // 	},
-    // 	{
-    // 		factor: 3,
-    // 		title: "Безопасность жизнедеятельности",
-    // 		num: "З",
-    // 		value: 0,
-    // 	},
-    // 	{
-    // 		factor: 1,
-    // 		title: "Производственная практика, научно-исследовательская работа",
-    // 		num: "З",
-    // 		value: 0,
-    // 	},
-    // 	{ factor: 1, title: "Преддипломная практика", num: "З", value: 0 },
-    // 	{
-    // 		factor: 3.5,
-    // 		title: "Компьютерные технологии в приборостроении",
-    // 		num: "М1",
-    // 		value: 50,
-    // 	},
-    // 	{
-    // 		factor: 3,
-    // 		title: "Компьютерная микроскопия",
-    // 		num: "М1",
-    // 		value: 48,
-    // 	},
-    // 	{
-    // 		factor: 3,
-    // 		title: "Экономическое обоснование инженерных решений",
-    // 		num: "М1",
-    // 		value: 50,
-    // 	},
-    // 	{
-    // 		factor: 3,
-    // 		title: "Безопасность жизнедеятельности",
-    // 		num: "М1",
-    // 		value: 43,
-    // 	},
-    // 	{
-    // 		factor: 3.5,
-    // 		title: "Компьютерные технологии в приборостроении",
-    // 		num: "М2",
-    // 		value: 0,
-    // 	},
-    // 	{ factor: 3, title: "Компьютерная микроскопия", num: "М2", value: 0 },
-    // 	{
-    // 		factor: 3,
-    // 		title: "Экономическое обоснование инженерных решений",
-    // 		num: "М2",
-    // 		value: 0,
-    // 	},
-    // 	{
-    // 		title:
-    // 			"Производственная практика (научно-исследовательская работа, стационарная)",
-    // 		num: "З",
-    // 		value: 0,
-    // 		factor: 5,
-    // 	},
-    // 	{
-    // 		title: "Преддипломная практика (стационарная)",
-    // 		num: "З",
-    // 		value: 0,
-    // 		factor: 1,
-    // 	},
-    // ];
-
-    let newMarks = await lk.getMarks(student, password, semester);
-
-    // console.log(newMarks);
+    const newMarks = await lk.getMarks(student, password, semester);
 
     const updatedMarks = newMarks.reduce((updatedMarks, newMark, i) => {
-      const { title, num, value, factor } = newMark;
+      const { title, num, value } = newMark;
 
-      const isPresented = prevMarks.some((prevMark) => {
-        return prevMark.subject === title && prevMark.module === num;
-      });
+      const isPresented = prevMarks.some(
+        (prevMark) => prevMark.subject === title && prevMark.module === num
+      );
 
       if (isPresented) {
-        const isNumChanged = prevMarks.some((prevMark) => {
-          return (
+        const isNumChanged = prevMarks.some(
+          (prevMark) =>
             prevMark.subject === title &&
             prevMark.module === num &&
             prevMark.value !== value
-          );
-        });
+        );
 
         if (isNumChanged) updatedMarks.push(newMarks[i]);
         else return updatedMarks;
@@ -312,14 +220,12 @@ async function updateMarksBySemester(semester, student, password, id) {
       return updatedMarks;
     }, []);
 
-    // console.log("updated ", updatedMarks);
-
     const deletedMarks = prevMarks.reduce((deletedMarks, prevMark) => {
       const { subject, module } = prevMark;
 
-      const isPresented = newMarks.some((newMark) => {
-        return newMark.title === subject && newMark.num === module;
-      });
+      const isPresented = newMarks.some(
+        (newMark) => newMark.title === subject && newMark.num === module
+      );
 
       if (!isPresented) {
         deletedMarks.push(prevMark);
@@ -327,8 +233,6 @@ async function updateMarksBySemester(semester, student, password, id) {
 
       return deletedMarks;
     }, []);
-
-    // console.log("deleted ", deletedMarks);
 
     if (deletedMarks.length > 0)
       await Promise.all(
@@ -350,17 +254,17 @@ async function updateMarksBySemester(semester, student, password, id) {
     return updatedMarks;
   } catch (e) {
     if (e.statusCode !== 401) {
-      console.log(student, e.statusCode, "updating marks");
+      console.log(student, e.statusCode, 'updating marks');
       // return updateMarksBySemester(semester, student, password, id);
     } else {
-      console.log(student, e.statusCode, "updating marks");
+      console.log(student, e.statusCode, 'updating marks');
       return [];
     }
   }
 }
 
 function notifyStud(semester, stud, semesters) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const { student, password, id, notify } = stud;
     // if (student === 116065)
     // 	console.log(semester, student, password, id, notify);
@@ -370,16 +274,15 @@ function notifyStud(semester, stud, semesters) {
         registerStudent(student, password, id).then(() =>
           db.getMarks(id, semester).then(async (newMarks) => {
             if (notify) {
-              let text = "";
+              let text = '';
 
               const updatedMarks = newMarks.filter((newMark) => {
-                const found = prevMarks.some((prevMark) => {
-                  return (
+                const found = prevMarks.some(
+                  (prevMark) =>
                     newMark.subject === prevMark.subject &&
                     newMark.module === prevMark.module &&
                     newMark.value === prevMark.value
-                  );
-                });
+                );
 
                 return !found;
               });
@@ -407,17 +310,8 @@ function notifyStud(semester, stud, semesters) {
                 }
               }
 
-              sortedMarks.map((sortedMark) => {
+              sortedMarks.foreach((sortedMark) => {
                 text += `${sortedMark.subject}\n`;
-
-                const length = Object.keys(sortedMark.marks).length;
-                sortedModules = Object.keys(sortedMark.marks)
-                  .sort()
-                  .map((module, i) => {
-                    if (length > 1 && i < length - 1)
-                      text += `${module}: ${sortedMark.marks[module]}, `;
-                    else text += `${module}: ${sortedMark.marks[module]}\n\n`;
-                  });
               });
 
               if (text.length) {
@@ -426,13 +320,13 @@ function notifyStud(semester, stud, semesters) {
                     [
                       Markup.button({
                         action: {
-                          type: "open_app",
-                          app_id: "7010368",
-                          label: "Смотреть оценки",
+                          type: 'open_app',
+                          app_id: '7010368',
+                          label: 'Смотреть оценки',
                           payload: JSON.stringify({
-                            url: "https://vk.com/stankin.moduli#marks",
+                            url: 'https://vk.com/stankin.moduli#marks',
                           }),
-                          hash: "marks",
+                          hash: 'marks',
                         },
                       }),
                     ],
@@ -457,7 +351,7 @@ function notifyStud(semester, stud, semesters) {
         )
       )
       .catch((err) => {
-        if (err.statusCode == 401)
+        if (err.statusCode === 401)
           console.log(`${student}: ${err.response.statusMessage}`);
         else console.log(`${student} ошибка`);
         resolve();
@@ -481,46 +375,40 @@ function registerStudent(student, password, id) {
 
       return db
         .createStudent(student, password, surname, initials, stgroup, id)
-        .then((response) => {
-          return updateSemesters(student, password, id);
-        })
+        .then(() => updateSemesters(student, password, id))
         .then((semesters) => {
           return Promise.all(
-            semesters.map((semester) => {
-              return updateMarks(student, password, id, semester);
-            })
-          ).then(() => {
-            return Promise.all(
-              semesters.map((semester) => {
-                return updateRatings(id, semester);
-              })
-            );
-          });
+            semesters.map((semester) =>
+              updateMarks(student, password, id, semester)
+            )
+          ).then(() =>
+            Promise.all(
+              semesters.map((semester) => updateRatings(id, semester))
+            )
+          );
         });
     })
     .catch((e) => console.log(e));
 }
 
-function updateSemesters(student, password, id) {
-  return lk.getSemesters(student, password).then((semesters) => {
-    return Promise.all(
-      semesters.map((semester) => {
-        return db.createSemester(semester);
-      })
+function updateSemesters(student, password) {
+  return lk
+    .getSemesters(student, password)
+    .then((semesters) =>
+      Promise.all(semesters.map((semester) => db.createSemester(semester)))
     );
-  });
 }
 
 function updateMarks(student, password, id, semester) {
-  return lk.getMarks(student, password, semester).then((marks) => {
-    return Promise.all(
+  return lk.getMarks(student, password, semester).then((marks) =>
+    Promise.all(
       marks.map((mark) => {
         const { title, num, value, factor } = mark;
 
         return db.createMark(id, semester, title, num, value, factor);
       })
-    );
-  });
+    )
+  );
 }
 
 function getMarks(id, semester) {
@@ -557,42 +445,42 @@ function updateRatings(id, semester) {
   return getMarks(id, semester).then((subjects) => {
     const isAll =
       subjects.length > 0
-        ? subjects.every((subject) => {
-            return Object.keys(subject.marks).every((module) => {
+        ? subjects.every((subject) =>
+            Object.keys(subject.marks).every((module) => {
               const value = subject.marks[module];
               const factor = parseFloat(subject.factor);
 
               return value >= 25 && factor > 0;
-            });
-          })
+            })
+          )
         : false;
 
     if (isAll) {
       let sum = 0;
       let sumFactor = 0;
 
-      subjects.map((subject) => {
+      subjects.foreach((subject) => {
         let sumFactorSubject = 0;
         let sumSubject = 0;
 
         const factor = parseFloat(subject.factor);
 
-        Object.keys(subject.marks).map((module) => {
+        Object.keys(subject.marks).foreach((module) => {
           const value = subject.marks[module];
 
-          if (module === "М1") {
+          if (module === 'М1') {
             sumFactorSubject += 3;
             sumSubject += value * 3;
-          } else if (module === "М2") {
+          } else if (module === 'М2') {
             sumFactorSubject += 2;
             sumSubject += value * 2;
-          } else if (module === "З") {
+          } else if (module === 'З') {
             sumFactorSubject += 5;
             sumSubject += value * 5;
-          } else if (module === "К") {
+          } else if (module === 'К') {
             sumFactorSubject += 5;
             sumSubject += value * 5;
-          } else if (module === "Э") {
+          } else if (module === 'Э') {
             sumFactorSubject += 7;
             sumSubject += value * 7;
           }
@@ -602,12 +490,12 @@ function updateRatings(id, semester) {
         sum += (sumSubject / sumFactorSubject) * factor;
       });
 
-      const rating = (sum /= sumFactor);
+      const rating = sum / sumFactor;
 
       return db.createRating(id, semester, rating);
-    } else {
-      db.deleteRatingById(id, semester);
     }
+
+    return db.deleteRatingById(id, semester);
   });
 }
 
@@ -633,14 +521,14 @@ function getAllRating(semester) {
   return db.getAllRating(semester);
 }
 
-//dating
+// dating
 
 function discoverDaters(id) {
   return db.discoverDaters(id);
 }
 
-function createLike(from_id, to_id) {
-  return db.createLike(from_id, to_id);
+function createLike(fromId, toId) {
+  return db.createLike(fromId, toId);
 }
 
 function matches(id) {

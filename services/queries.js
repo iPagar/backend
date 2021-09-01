@@ -1,4 +1,5 @@
-const Pool = require("pg").Pool;
+const { Pool } = require('pg');
+
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -7,11 +8,11 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-//moduli
+// moduli
 function getStudent(id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT student, surname, initials, stgroup, id, notify FROM students WHERE id = ($1) and is_deleted != TRUE",
+      'SELECT student, surname, initials, stgroup, id, notify FROM students WHERE id = ($1) and is_deleted != TRUE',
       [id],
       (error, results) => {
         if (error) {
@@ -41,7 +42,7 @@ function getStudentsBySemester(semester) {
 function getSemesters(id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT ARRAY(SELECT DISTINCT semester FROM marks WHERE id = ($1))",
+      'SELECT ARRAY(SELECT DISTINCT semester FROM marks WHERE id = ($1))',
       [id],
       (error, results) => {
         if (error) {
@@ -56,7 +57,7 @@ function getSemesters(id) {
 function createStudent(student, password, surname, initials, stgroup, id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO students VALUES ($1, $2, $3, $4, $5, $6, FALSE) ON CONFLICT (student) DO UPDATE SET password = EXCLUDED.password, surname = EXCLUDED.surname, initials = EXCLUDED.initials, stgroup = EXCLUDED.stgroup, id = EXCLUDED.id, student = EXCLUDED.student, is_deleted = EXCLUDED.is_deleted RETURNING *",
+      'INSERT INTO students VALUES ($1, $2, $3, $4, $5, $6, FALSE) ON CONFLICT (student) DO UPDATE SET password = EXCLUDED.password, surname = EXCLUDED.surname, initials = EXCLUDED.initials, stgroup = EXCLUDED.stgroup, id = EXCLUDED.id, student = EXCLUDED.student, is_deleted = EXCLUDED.is_deleted RETURNING *',
       [student, password, surname, initials, stgroup, id],
       (error, results) => {
         if (error) {
@@ -68,11 +69,11 @@ function createStudent(student, password, surname, initials, stgroup, id) {
   );
 }
 
-function addVkStats(id, vk_platform, vk_ref, vk_is_favorite) {
+function addVkStats(id, vkPlatform, vkRef, vkIsFavorite) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO vk_ref_platform VALUES (default,$1, $2, $3, $4) RETURNING *",
-      [id, vk_platform, vk_ref, vk_is_favorite],
+      'INSERT INTO vk_ref_platform VALUES (default,$1, $2, $3, $4) RETURNING *',
+      [id, vkPlatform, vkRef, vkIsFavorite],
       (error, results) => {
         if (error) {
           return reject(error);
@@ -86,7 +87,7 @@ function addVkStats(id, vk_platform, vk_ref, vk_is_favorite) {
 function deleteStudent(id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "UPDATE students SET is_deleted = TRUE WHERE id = $1",
+      'UPDATE students SET is_deleted = TRUE WHERE id = $1',
       [id],
       (error, results) => {
         if (error) {
@@ -101,9 +102,9 @@ function deleteStudent(id) {
 function createSemester(semester) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO semesters VALUES ($1) ON CONFLICT DO NOTHING",
+      'INSERT INTO semesters VALUES ($1) ON CONFLICT DO NOTHING',
       [semester],
-      (error, results) => {
+      (error) => {
         if (error) {
           return reject(error);
         }
@@ -116,9 +117,9 @@ function createSemester(semester) {
 function createMark(id, semester, subject, module, value, factor) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO marks VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id, semester, subject, module) DO UPDATE SET value = EXCLUDED.value, factor = EXCLUDED.factor",
+      'INSERT INTO marks VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id, semester, subject, module) DO UPDATE SET value = EXCLUDED.value, factor = EXCLUDED.factor',
       [id, semester, subject, module, value, factor],
-      (error, results) => {
+      (error) => {
         if (error) {
           return reject(error);
         }
@@ -131,7 +132,7 @@ function createMark(id, semester, subject, module, value, factor) {
 function deleteMark(id, semester, subject, module) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "DELETE FROM marks WHERE id = $1 AND semester = $2 AND subject = $3 AND module = $4",
+      'DELETE FROM marks WHERE id = $1 AND semester = $2 AND subject = $3 AND module = $4',
       [id, semester, subject, module],
       (error, results) => {
         if (error) {
@@ -146,7 +147,7 @@ function deleteMark(id, semester, subject, module) {
 function createRating(id, semester, rating) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO ratings VALUES ($1, $2, $3) ON CONFLICT (id, semester) DO UPDATE SET rating = EXCLUDED.rating",
+      'INSERT INTO ratings VALUES ($1, $2, $3) ON CONFLICT (id, semester) DO UPDATE SET rating = EXCLUDED.rating',
       [id, semester, rating],
       (error, results) => {
         if (error) {
@@ -268,7 +269,7 @@ function notify(id) {
     pool.query(
       `UPDATE students SET notify = NOT notify WHERE id = ($1)`,
       [id],
-      (error, results) => {
+      (error) => {
         if (error) {
           return reject(error);
         }
@@ -278,12 +279,12 @@ function notify(id) {
   );
 }
 
-function setNotify(id, notify) {
+function setNotify(id, notify2) {
   return new Promise((resolve, reject) =>
     pool.query(
       `UPDATE students SET notify = ($2) WHERE id = ($1)`,
-      [id, notify],
-      (error, results) => {
+      [id, notify2],
+      (error) => {
         if (error) {
           return reject(error);
         }
@@ -308,11 +309,11 @@ function getLastSemesters() {
   );
 }
 
-//dating
+// dating
 function discoverDaters(id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT id FROM students LEFT JOIN likes ON students.id = from_id WHERE id != ($1) order by random() limit 1",
+      'SELECT id FROM students LEFT JOIN likes ON students.id = from_id WHERE id != ($1) order by random() limit 1',
       [id],
       (error, results) => {
         if (error) {
@@ -324,11 +325,11 @@ function discoverDaters(id) {
   );
 }
 
-function createLike(from_id, to_id) {
+function createLike(fromId, toId) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO likes VALUES ($1, $2)",
-      [from_id, to_id],
+      'INSERT INTO likes VALUES ($1, $2)',
+      [fromId, toId],
       (error, results) => {
         if (error) {
           return reject(error);
@@ -342,7 +343,7 @@ function createLike(from_id, to_id) {
 function matches(id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT * FROM likes WHERE to_id = ($1) OR from_id = ($1)",
+      'SELECT * FROM likes WHERE to_id = ($1) OR from_id = ($1)',
       [id],
       (error, results) => {
         if (error) {
@@ -354,11 +355,11 @@ function matches(id) {
   );
 }
 
-function getMessages(to_id, from_id) {
+function getMessages(toId, fromId) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT * FROM messages WHERE to_id = ($1) OR from_id = ($2)",
-      [to_id, from_id],
+      'SELECT * FROM messages WHERE to_id = ($1) OR from_id = ($2)',
+      [toId, fromId],
       (error, results) => {
         if (error) {
           return reject(error);
@@ -369,11 +370,11 @@ function getMessages(to_id, from_id) {
   );
 }
 
-function sendMessage(from_id, to_id, text) {
+function sendMessage(fromId, toId, text) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO messages VALUES(($1), ($2), ($3))",
-      [from_id, to_id, text],
+      'INSERT INTO messages VALUES(($1), ($2), ($3))',
+      [fromId, toId, text],
       (error, results) => {
         if (error) {
           return reject(error);
@@ -384,11 +385,11 @@ function sendMessage(from_id, to_id, text) {
   );
 }
 
-function readMessage(to_id, id) {
+function readMessage(toId, id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "UPDATE messages SET read = TRUE WHERE to_id = ($1) AND id = ($2)",
-      [to_id, id],
+      'UPDATE messages SET read = TRUE WHERE to_id = ($1) AND id = ($2)',
+      [toId, id],
       (error, results) => {
         if (error) {
           return reject(error);
@@ -402,7 +403,7 @@ function readMessage(to_id, id) {
 // OL
 function addOl(id) {
   return new Promise((resolve, reject) =>
-    pool.query("INSERT INTO ol VALUES($1)", [id], (error, results) => {
+    pool.query('INSERT INTO ol VALUES($1)', [id], (error, results) => {
       if (error) {
         return reject(error);
       }
@@ -414,7 +415,7 @@ function addOl(id) {
 function myOl(id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT COUNT(*) FROM ol WHERE id = ($1)",
+      'SELECT COUNT(*) FROM ol WHERE id = ($1)',
       [id],
       (error, results) => {
         if (error) {
@@ -428,7 +429,7 @@ function myOl(id) {
 
 function numberOl() {
   return new Promise((resolve, reject) =>
-    pool.query("SELECT COUNT(*) FROM ol", [], (error, results) => {
+    pool.query('SELECT COUNT(*) FROM ol', [], (error, results) => {
       if (error) {
         return reject(error);
       }
@@ -437,12 +438,12 @@ function numberOl() {
   );
 }
 
-//schedule
+// schedule
 
 function getSchStudents() {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT uuid_in(md5(random()::text || clock_timestamp()::text)::cstring) as id,fio, stgroup FROM sch",
+      'SELECT uuid_in(md5(random()::text || clock_timestamp()::text)::cstring) as id,fio, stgroup FROM sch',
       [],
       (error, results) => {
         if (error) {
@@ -456,7 +457,7 @@ function getSchStudents() {
 
 function getIsMe(id) {
   return new Promise((resolve, reject) =>
-    pool.query("SELECT * FROM sch where id = ($1)", [id], (error, results) => {
+    pool.query('SELECT * FROM sch where id = ($1)', [id], (error, results) => {
       if (error) {
         return reject(error);
       }
@@ -468,7 +469,7 @@ function getIsMe(id) {
 function addMe(id, fio, stgroup) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO sch VALUES ($1, $2, $3)",
+      'INSERT INTO sch VALUES ($1, $2, $3)',
       [id, fio, stgroup],
       (error, results) => {
         if (error) {

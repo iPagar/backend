@@ -1,5 +1,5 @@
-const Pool = require("pg").Pool;
-const MongoClient = require("mongodb").MongoClient;
+const { Pool } = require('pg');
+const { MongoClient } = require('mongodb');
 
 const postgres = new Pool({
   user: process.env.DB_USER,

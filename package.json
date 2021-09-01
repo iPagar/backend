@@ -1,5 +1,5 @@
 {
-  "name": "stankinserver",
+  "name": "stankin-backend",
   "version": "2.0.0",
   "description": "",
   "main": "index.js",
@@ -8,8 +8,8 @@
     "node": ">=8.10.0"
   },
   "scripts": {
-    "prod": "env=production nodemon index.js",
-    "start": "env=development nodemon index.js",
+    "start": "cross-env ENV=production node index.js",
+    "dev": "cross-env ENV=development nodemon index.js",
     "test": "node test.js"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
     "http-errors": "^1.8.0",
     "manager-schedule": "git+https://github.com/iPagar/manager-schedule.git",
     "manager-teachers": "github:iPagar/manager-teachers",
+    "mongodb": "^4.1.1",
     "morgan": "^1.10.0",
     "morgan-body": "^2.6.5",
     "node-cron": "^2.0.3",
@@ -36,6 +37,7 @@
     "winston": "^3.3.3"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-config-prettier": "^8.3.0",

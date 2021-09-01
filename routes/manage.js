@@ -1,12 +1,13 @@
-const express = require("express");
-const router = express.Router();
-const { check, validationResult } = require("express-validator");
-const createError = require("http-errors");
-const db = require("../services/control");
-const q = require("../services/queries");
-const rp = require("request-promise");
+const express = require('express');
+const { check, validationResult } = require('express-validator');
+const createError = require('http-errors');
+const rp = require('request-promise');
+const db = require('../services/control');
+const q = require('../services/queries');
 
-router.post("/student", function (req, res, next) {
+const router = express.Router();
+
+router.post('/student', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -21,7 +22,6 @@ router.post("/student", function (req, res, next) {
       )
     );
   } else {
-    console.log(params, "post");
     q.addVkStats(
       params.vk_user_id,
       params.vk_platform,
@@ -39,7 +39,7 @@ router.post("/student", function (req, res, next) {
   }
 });
 
-router.get("/additional", async function (req, res, next) {
+router.get('/additional', async (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -56,8 +56,8 @@ router.get("/additional", async function (req, res, next) {
   } else {
     try {
       const optionsVk = {
-        method: "GET",
-        uri: "https://api.vk.com/method/groups.isMember",
+        method: 'GET',
+        uri: 'https://api.vk.com/method/groups.isMember',
         qs: {
           group_id: 183639424,
           user_id: params.vk_user_id,
@@ -66,9 +66,9 @@ router.get("/additional", async function (req, res, next) {
         },
         json: true,
       };
-      const isMemberGroup = await rp(optionsVk).then((response) => {
-        return response.response;
-      });
+      const isMemberGroup = await rp(optionsVk).then(
+        (response) => response.response
+      );
 
       res.send({
         isMemberGroup,
@@ -80,7 +80,7 @@ router.get("/additional", async function (req, res, next) {
   }
 });
 
-router.delete("/student", function (req, res, next) {
+router.delete('/student', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -96,7 +96,7 @@ router.delete("/student", function (req, res, next) {
     );
   } else {
     db.deleteStudent(params.vk_user_id)
-      .then((student) => {
+      .then(() => {
         res.send();
       })
       .catch((err) => {
@@ -106,17 +106,16 @@ router.delete("/student", function (req, res, next) {
 });
 
 router.put(
-  "/student",
+  '/student',
   [
-    check("password")
+    check('password')
       .isLength({ min: 1 })
-      .withMessage("must be at least 1 chars long"),
-    check("student").isLength({ min: 6, max: 6 }),
+      .withMessage('must be at least 1 chars long'),
+    check('student').isLength({ min: 6, max: 6 }),
   ],
-  function (req, res, next) {
+  (req, res, next) => {
     const errors = validationResult(req);
     const { params, student, password } = req.body;
-    console.log(params, student, password, "put");
     if (!errors.isEmpty()) {
       next(
         createError(
@@ -140,13 +139,13 @@ router.put(
 );
 
 router.post(
-  "/marks",
+  '/marks',
   [
-    check("semester")
+    check('semester')
       .isLength({ min: 10, max: 10 })
-      .withMessage("must be at least 10 chars long"),
+      .withMessage('must be at least 10 chars long'),
   ],
-  function (req, res, next) {
+  (req, res, next) => {
     const errors = validationResult(req);
     const { params, semester } = req.body;
 
@@ -172,7 +171,7 @@ router.post(
   }
 );
 
-router.post("/semesters", function (req, res, next) {
+router.post('/semesters', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -197,9 +196,9 @@ router.post("/semesters", function (req, res, next) {
   }
 });
 
-router.post("/allrating", function (req, res, next) {
+router.post('/allrating', (req, res, next) => {
   const errors = validationResult(req);
-  const { params, semester } = req.body;
+  const { semester } = req.body;
 
   if (!errors.isEmpty()) {
     next(
@@ -222,9 +221,9 @@ router.post("/allrating", function (req, res, next) {
   }
 });
 
-router.post("/allmodules", function (req, res, next) {
+router.post('/allmodules', (req, res, next) => {
   const errors = validationResult(req);
-  const { params, semester, subject, module } = req.body;
+  const { semester, subject, module } = req.body;
 
   if (!errors.isEmpty()) {
     next(
@@ -247,9 +246,9 @@ router.post("/allmodules", function (req, res, next) {
   }
 });
 
-router.post("/rating", function (req, res, next) {
+router.post('/rating', (req, res, next) => {
   const errors = validationResult(req);
-  const { params, semester, search, offset } = req.body;
+  const { semester, search, offset } = req.body;
 
   if (!errors.isEmpty()) {
     next(
@@ -272,7 +271,7 @@ router.post("/rating", function (req, res, next) {
   }
 });
 
-router.post("/ratingst", function (req, res, next) {
+router.post('/ratingst', (req, res, next) => {
   const errors = validationResult(req);
   const { params, semester } = req.body;
 
@@ -297,7 +296,7 @@ router.post("/ratingst", function (req, res, next) {
   }
 });
 
-router.post("/notify", function (req, res, next) {
+router.post('/notify', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -322,9 +321,9 @@ router.post("/notify", function (req, res, next) {
   }
 });
 
-//dating
+// dating
 
-router.post("/dater", function (req, res, next) {
+router.post('/dater', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -355,14 +354,14 @@ router.post("/dater", function (req, res, next) {
 });
 
 router.put(
-  "/dater",
+  '/dater',
   [
-    check("description")
+    check('description')
       .isLength({ min: 1 })
-      .withMessage("must be at least 1 chars long"),
-    check("photo").isLength({ min: 1 }),
+      .withMessage('must be at least 1 chars long'),
+    check('photo').isLength({ min: 1 }),
   ],
-  function (req, res, next) {
+  (req, res, next) => {
     const errors = validationResult(req);
     const { params, description, photo } = req.body;
 
@@ -378,7 +377,7 @@ router.put(
       );
     } else {
       db.createDater(params.vk_user_id, photo, description)
-        .then((dater) => {
+        .then(() => {
           res.send();
         })
         .catch((err) => {
@@ -388,7 +387,7 @@ router.put(
   }
 );
 
-router.delete("/dater", function (req, res, next) {
+router.delete('/dater', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -404,7 +403,7 @@ router.delete("/dater", function (req, res, next) {
     );
   } else {
     db.deleteDater(params.vk_user_id)
-      .then((dater) => {
+      .then(() => {
         res.send();
       })
       .catch((err) => {
@@ -413,7 +412,7 @@ router.delete("/dater", function (req, res, next) {
   }
 });
 
-router.post("/discover", function (req, res, next) {
+router.post('/discover', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -438,38 +437,34 @@ router.post("/discover", function (req, res, next) {
   }
 });
 
-router.post(
-  "/like",
-  check("to_id").isLength({ min: 1 }),
-  function (req, res, next) {
-    const errors = validationResult(req);
-    const { params, to_id } = req.body;
-
-    if (!errors.isEmpty()) {
-      next(
-        createError(
-          400,
-          errors
-            .array()
-            .map((error) => `${error.param} ${error.msg}`)
-            .toString()
-        )
-      );
-    } else {
-      db.createLike(params.vk_user_id, to_id)
-        .then((response) => {
-          res.send(response);
-        })
-        .catch((err) => {
-          next(createError(err));
-        });
-    }
-  }
-);
-
-router.post("/matches", function (req, res, next) {
+router.post('/like', check('to_id').isLength({ min: 1 }), (req, res, next) => {
   const errors = validationResult(req);
   const { params, to_id } = req.body;
+
+  if (!errors.isEmpty()) {
+    next(
+      createError(
+        400,
+        errors
+          .array()
+          .map((error) => `${error.param} ${error.msg}`)
+          .toString()
+      )
+    );
+  } else {
+    db.createLike(params.vk_user_id, to_id)
+      .then((response) => {
+        res.send(response);
+      })
+      .catch((err) => {
+        next(createError(err));
+      });
+  }
+});
+
+router.post('/matches', (req, res, next) => {
+  const errors = validationResult(req);
+  const { params } = req.body;
 
   if (!errors.isEmpty()) {
     next(
@@ -492,7 +487,7 @@ router.post("/matches", function (req, res, next) {
   }
 });
 
-router.post("/messages", function (req, res, next) {
+router.post('/messages', (req, res, next) => {
   const errors = validationResult(req);
   const { params, from_id } = req.body;
 
@@ -517,7 +512,7 @@ router.post("/messages", function (req, res, next) {
   }
 });
 
-router.put("/message", function (req, res, next) {
+router.put('/message', (req, res, next) => {
   const errors = validationResult(req);
   const { params, to_id, text } = req.body;
 
@@ -542,7 +537,7 @@ router.put("/message", function (req, res, next) {
   }
 });
 
-router.post("/readmessage", function (req, res, next) {
+router.post('/readmessage', (req, res, next) => {
   const errors = validationResult(req);
   const { params, id } = req.body;
 
@@ -567,10 +562,9 @@ router.post("/readmessage", function (req, res, next) {
   }
 });
 
-//schedule
-router.get("/sch/students", function (req, res, next) {
+// schedule
+router.get('/sch/students', (req, res, next) => {
   const errors = validationResult(req);
-  const { params } = req.body;
   if (!errors.isEmpty()) {
     next(
       createError(
@@ -592,7 +586,7 @@ router.get("/sch/students", function (req, res, next) {
   }
 });
 
-router.get("/sch/isme", function (req, res, next) {
+router.get('/sch/isme', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -609,7 +603,7 @@ router.get("/sch/isme", function (req, res, next) {
   } else {
     db.getIsMe(params.vk_user_id)
       .then((response) => {
-        res.send({ isme: response.length ? true : false });
+        res.send({ isme: !!response.length });
       })
       .catch((err) => {
         next(createError(err));
@@ -617,7 +611,7 @@ router.get("/sch/isme", function (req, res, next) {
   }
 });
 
-router.post("/sch/addme", async function (req, res, next) {
+router.post('/sch/addme', async (req, res, next) => {
   const errors = validationResult(req);
   const { params, fio, stgroup } = req.body;
 
@@ -633,7 +627,7 @@ router.post("/sch/addme", async function (req, res, next) {
     );
   } else {
     db.addMe(params.vk_user_id, fio, stgroup)
-      .then((response) => {
+      .then(() => {
         res.send();
       })
       .catch((err) => {
