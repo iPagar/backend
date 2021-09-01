@@ -25,24 +25,21 @@ app.use(winston);
 app.disable('x-powered-by');
 
 // check sign
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   const xSignHeader = req.headers[`x-sign-header`].slice(1);
-
-  check(xSignHeader, process.env.VK_SECURE_MODULI)
-    .then((params) => {
+  try {
+    const params = await check(xSignHeader, process.env.VK_SECURE_MODULI);
+    req.body = { params, ...req.body };
+    next();
+  } catch (_e) {
+    try {
+      const params = await check(xSignHeader, process.env.VK_SECURE_SCHEDULE);
       req.body = { params, ...req.body };
       next();
-    })
-    .catch(() => {
-      check(xSignHeader, process.env.VK_SECURE_SCHEDULE)
-        .then((params) => {
-          req.body = { params, ...req.body };
-          next();
-        })
-        .catch(() => {
-          next(createError(401));
-        });
-    });
+    } catch (_e1) {
+      next(createError(401));
+    }
+  }
 });
 
 // modules
