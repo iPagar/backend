@@ -438,6 +438,21 @@ function numberOl() {
   );
 }
 
+function getSchoolarship() {
+  return new Promise((resolve, reject) =>
+    pool.query(
+      "SELECT type, value FROM schoolarship WHERE now() + interval '3 hours' >= start_date and now() <= start_date + interval '3 hours' + interval '1 year' - interval '1 day'",
+      [],
+      (error, results) => {
+        if (error) {
+          return reject(error);
+        }
+        return resolve(results.rows);
+      }
+    )
+  );
+}
+
 // schedule
 
 function getSchStudents() {
@@ -514,4 +529,5 @@ module.exports = {
   getSchStudents,
   getIsMe,
   addMe,
+  getSchoolarship
 };

@@ -171,6 +171,30 @@ router.post(
   }
 );
 
+router.get('/scholarships', (req, res, next) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    next(
+      createError(
+        400,
+        errors
+          .array()
+          .map((error) => `${error.param} ${error.msg}`)
+          .toString()
+      )
+    );
+  } else {
+    q.getSchoolarship()
+      .then((response) => {
+        res.send(response);
+      })
+      .catch((err) => {
+        next(createError(err));
+      });
+  }
+});
+
 router.post('/semesters', (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
