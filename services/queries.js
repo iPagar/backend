@@ -57,7 +57,7 @@ function getSemesters(id) {
 function createStudent(student, password, surname, initials, stgroup, id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      'INSERT INTO students VALUES ($1, $2, $3, $4, $5, $6, FALSE) ON CONFLICT (student) DO UPDATE SET password = EXCLUDED.password, surname = EXCLUDED.surname, initials = EXCLUDED.initials, stgroup = EXCLUDED.stgroup, id = EXCLUDED.id, student = EXCLUDED.student, is_deleted = EXCLUDED.is_deleted RETURNING *',
+      'INSERT INTO students VALUES ($1, $2, $3, $4, $5, $6, FALSE) ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password, surname = EXCLUDED.surname, initials = EXCLUDED.initials, stgroup = EXCLUDED.stgroup, id = EXCLUDED.id, student = EXCLUDED.student, is_deleted = EXCLUDED.is_deleted RETURNING *',
       [student, password, surname, initials, stgroup, id],
       (error, results) => {
         if (error) {
@@ -87,7 +87,7 @@ function addVkStats(id, vkPlatform, vkRef, vkIsFavorite) {
 function deleteStudent(id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      'UPDATE students SET is_deleted = TRUE WHERE id = $1',
+     'DELETE FROM students WHERE id = ($1) RETURNING *',
       [id],
       (error, results) => {
         if (error) {
