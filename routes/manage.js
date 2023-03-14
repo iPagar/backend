@@ -39,6 +39,31 @@ router.post('/student', (req, res, next) => {
   }
 });
 
+router.get('/marks/history', (req, res, next) => {
+  const errors = validationResult(req);
+  const { params } = req.body;
+
+  if (!errors.isEmpty()) {
+    next(
+      createError(
+        400,
+        errors
+          .array()
+          .map((error) => `${error.param} ${error.msg}`)
+          .toString()
+      )
+    );
+  } else {
+    db.getMarksHistory(params.vk_user_id)
+      .then((response) => {
+        res.send(response);
+      })
+      .catch((err) => {
+        next(createError(err));
+      });
+  }
+})
+
 router.get('/additional', async (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;

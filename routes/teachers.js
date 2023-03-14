@@ -280,7 +280,7 @@ router.get('/teachers/comments', (req, res, next) => {
       .then((comments) => {
         comments
           .filter((comment) => !comment.is_public)
-          .foreach((comment) => {
+          .forEach((comment) => {
             if (comment.id !== parseInt(id, 10)) comment.id = uuidv4();
           });
 

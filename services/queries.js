@@ -24,6 +24,21 @@ function getStudent(id) {
   );
 }
 
+function getMarksHistory(student) {
+  return new Promise((resolve, reject) =>
+    pool.query(
+      'SELECT semester, subject, module, prev_value, next_value, operation, created_at FROM history_marks WHERE student = ($1) ORDER BY created_at DESC',
+      [student],
+      (error, results) => {
+        if (error) {
+          return reject(error);
+        }
+        return resolve(results.rows);
+      }
+    )
+  );
+}
+
 function getStudentsBySemester(semester) {
   return new Promise((resolve, reject) =>
     pool.query(
@@ -529,5 +544,6 @@ module.exports = {
   getSchStudents,
   getIsMe,
   addMe,
-  getSchoolarship
+  getSchoolarship,
+  getMarksHistory
 };
