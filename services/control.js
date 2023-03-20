@@ -151,13 +151,13 @@ async function makeNotifyText(id, updatedMarks, semester, isLast) {
     }
   }
 
-  sortedMarks.foreach((sortedMark) => {
+  sortedMarks.forEach((sortedMark) => {
     text += `${sortedMark.subject}\n`;
 
     const { length } = Object.keys(sortedMark.marks);
     Object.keys(sortedMark.marks)
       .sort()
-      .foreach((module, i) => {
+      .forEach((module, i) => {
         if (length > 1 && i < length - 1)
           text += `${module}: ${sortedMark.marks[module]}, `;
         else text += `${module}: ${sortedMark.marks[module]}\n\n`;
@@ -310,7 +310,7 @@ function notifyStud(semester, stud, semesters) {
                 }
               }
 
-              sortedMarks.foreach((sortedMark) => {
+              sortedMarks.forEach((sortedMark) => {
                 text += `${sortedMark.subject}\n`;
               });
 
@@ -459,13 +459,13 @@ function updateRatings(id, semester) {
       let sum = 0;
       let sumFactor = 0;
 
-      subjects.foreach((subject) => {
+      subjects.forEach((subject) => {
         let sumFactorSubject = 0;
         let sumSubject = 0;
 
         const factor = parseFloat(subject.factor);
 
-        Object.keys(subject.marks).foreach((module) => {
+        Object.keys(subject.marks).forEach((module) => {
           const value = subject.marks[module];
 
           if (module === 'М1') {
