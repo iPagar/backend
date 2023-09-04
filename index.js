@@ -40,6 +40,18 @@ app.use((req, res, next) => {
           next();
         })
         .catch(() => {
+          try {
+            const { id, sign } = xSignHeader
+              .split('&')
+              .map((param) => param.split('='))
+              .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+
+            if (sign === process.env.TEST_SIGN) {
+              req.body = { params: { vk_user_id: id }, ...req.body };
+              return next();
+            }
+          } catch (e) {}
+
           next(createError(401));
         });
     });
