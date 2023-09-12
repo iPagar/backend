@@ -1,28 +1,29 @@
+require("reflect-metadata");
 // load env
-require('dotenv').config();
+require("dotenv").config();
 // express
-const express = require('express');
+const express = require("express");
 // cors and fs
-const cors = require('cors');
-const http = require('http');
+const cors = require("cors");
+const http = require("http");
 // securing
-const helmet = require('helmet');
-const check = require('vkui-sign-checker');
+const helmet = require("helmet");
+const check = require("vkui-sign-checker");
 // loggers and error handlers
-const createError = require('http-errors');
-const winston = require('./config/winston');
-const { notFoundHandler, errorHanlder } = require('./config/errorHandlers');
+const createError = require("http-errors");
+const { createExpressServer } = require("routing-controllers");
+const winston = require("./config/winston");
 
 const app = express();
 
 app.use(helmet());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: "1mb" }));
 app.use(
-  express.urlencoded({ limit: '1mb', parameterLimit: 500, extended: true })
+  express.urlencoded({ limit: "1mb", parameterLimit: 500, extended: true })
 );
 app.use(cors());
 app.use(winston);
-app.disable('x-powered-by');
+app.disable("x-powered-by");
 
 // check sign
 app.use((req, res, next) => {
@@ -42,8 +43,8 @@ app.use((req, res, next) => {
         .catch(() => {
           try {
             const { id, sign } = xSignHeader
-              .split('&')
-              .map((param) => param.split('='))
+              .split("&")
+              .map((param) => param.split("="))
               .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
 
             if (sign === process.env.TEST_SIGN) {
@@ -58,15 +59,11 @@ app.use((req, res, next) => {
 });
 
 // modules
-const manage = require('./routes/manage');
-const schedule = require('./routes/schedule');
-const teachers = require('./routes/teachers');
-const ol = require('./routes/ol');
+const manage = require("./routes/manage");
+const schedule = require("./routes/schedule");
+const teachers = require("./routes/teachers");
+const ol = require("./routes/ol");
 
 app.use([manage, schedule, teachers, ol]);
 
-// error handlers
-app.use(notFoundHandler);
-app.use(errorHanlder);
-
-http.createServer(app).listen(process.env.PORT);
+export { app };
