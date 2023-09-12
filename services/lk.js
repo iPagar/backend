@@ -1,14 +1,14 @@
-const rp = require('request-promise');
+const rp = require("request-promise");
 
-const pathSemesters = 'https://lk.stankin.ru/webapi/api2/semesters/';
-const pathMarks = 'https://lk.stankin.ru/webapi/api2/marks/';
+const pathSemesters = "https://lk.stankin.ru/webapi/api2/semesters/";
+const pathMarks = "https://lk.stankin.ru/webapi/api2/marks/";
 
-function getMarks(student, password, semester) {
+async function getMarks(student, password, semester) {
   const options = {
-    method: 'POST',
+    method: "POST",
     uri: pathMarks,
     headers: {
-      'content-type': 'application/x-www-form-urlencoded; charset=utf-8',
+      "content-type": "application/x-www-form-urlencoded; charset=utf-8",
     },
     form: {
       student,
@@ -19,40 +19,38 @@ function getMarks(student, password, semester) {
     timeout: 100,
   };
 
-  if (student >= 999000 && student <= 999999)
-    return new Promise((resolve) => {
-      resolve([
-        {
-          title: 'Трансфигурация',
-          num: 'М1',
-          value: Math.floor(Math.random() * (45 - 25)) + 25,
-          factor: 3,
-        },
-        {
-          title: 'Трансфигурация',
-          num: 'М2',
-          value: Math.floor(Math.random() * (45 - 25)) + 25,
-          factor: 3,
-        },
-        {
-          title: 'Трансфигурация',
-          num: 'Э',
-          value: Math.floor(Math.random() * (45 - 25)) + 25,
-          factor: 3,
-        },
-      ]);
-    });
+  if (student >= 999000 && student <= 999999) {
+    return [
+      {
+        title: "Трансфигурация",
+        num: "М1",
+        value: Math.floor(Math.random() * (45 - 25)) + 25,
+        factor: 3,
+      },
+      {
+        title: "Трансфигурация",
+        num: "М2",
+        value: Math.floor(Math.random() * (45 - 25)) + 25,
+        factor: 3,
+      },
+      {
+        title: "Трансфигурация",
+        num: "Э",
+        value: Math.floor(Math.random() * (45 - 25)) + 25,
+        factor: 3,
+      },
+    ];
+  }
 
-  return rp(options).then((marks) =>
-    marks.filter(
-      (mark) => mark.title !== 'Рейтинг' && mark.title !== 'Накопленный Рейтинг'
-    )
+  const marks = await rp(options);
+  return marks.filter(
+    (mark) => mark.title !== "Рейтинг" && mark.title !== "Накопленный Рейтинг"
   );
 }
 
-function getSemesters(student, password) {
+async function getSemesters(student, password) {
   const options = {
-    method: 'POST',
+    method: "POST",
     uri: pathSemesters,
     form: {
       student,
@@ -62,17 +60,16 @@ function getSemesters(student, password) {
     timeout: 100,
   };
 
-  if (student >= 999000 && student <= 999999)
-    return new Promise((resolve) => {
-      resolve(['2019-осень']);
-    });
-
-  return rp(options).then((response) => response.semesters);
+  if (student >= 999000 && student <= 999999) {
+    return ["2019-осень"];
+  }
+  const response = await rp(options);
+  return response.semesters;
 }
 
-function getStudent(student, password) {
+async function getStudent(student, password) {
   const options = {
-    method: 'POST',
+    method: "POST",
     uri: pathSemesters,
     form: {
       student,
@@ -82,20 +79,20 @@ function getStudent(student, password) {
     timeout: 100,
   };
 
-  if (student >= 999000 && student <= 999999)
-    return new Promise((resolve) => {
-      resolve({
-        surname: 'Тест',
-        initials: 'Тест',
-        stgroup: `Тест-${Math.floor(Math.random() * (15 - 10)) + 10}`,
-      });
-    });
+  if (student >= 999000 && student <= 999999) {
+    return {
+      surname: "Тест",
+      initials: "Тест",
+      stgroup: `Тест-${Math.floor(Math.random() * (15 - 10)) + 10}`,
+    };
+  }
 
-  return rp(options).then((response) => ({
+  const response = await rp(options);
+  return {
     stgroup: response.stgroup,
     surname: response.surname,
     initials: response.initials,
-  }));
+  };
 }
 
 module.exports = { getStudent, getSemesters, getMarks };
