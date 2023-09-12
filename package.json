@@ -10,6 +10,7 @@
   "scripts": {
     "start": "cross-env ENV=production node index.js",
     "dev": "cross-env ENV=development nodemon index.js",
+    "start:prod": "cross-env ENV=production node index.js",
     "test": "node test.js"
   },
   "dependencies": {
@@ -31,7 +32,9 @@
     "node-cron": "^2.0.3",
     "node-vk-bot-api": "^3.3.4",
     "pg": "^8.5.1",
+    "reflect-metadata": "^0.1.13",
     "request-promise": "^4.2.6",
+    "rxjs": "^7.8.1",
     "text-table": "^0.2.0",
     "vkui-sign-checker": "^2.0.1",
     "winston": "^3.3.3"

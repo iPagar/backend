@@ -1,12 +1,12 @@
-const { mongo } = require('./config');
+const { mongo } = require("./config");
 
-const getTeachers = (stgroup = '') =>
+const getTeachers = (stgroup = "") =>
   mongo.then(async (client) => {
     const teachers = (
       await client
-        .collection('lessons')
+        .collection("lessons")
         .find(
-          { stgroup: { $regex: `${stgroup.trim()}`, $options: 'i' } },
+          { stgroup: { $regex: `${stgroup.trim()}`, $options: "i" } },
           { projection: { teacher: 1, _id: 0 } }
         )
         .toArray()
