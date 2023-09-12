@@ -5,7 +5,6 @@ import { app } from "..";
 import { AllExceptionsFilter } from "../config/all-exception.filter";
 import { ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { Express } from "express-serve-static-core";
 
 async function bootstrap() {
   const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(app));
