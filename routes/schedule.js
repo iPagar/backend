@@ -1,12 +1,12 @@
 const express = require("express");
+
 const router = express.Router();
-const { check, validationResult } = require("express-validator");
+const { validationResult } = require("express-validator");
 const createError = require("http-errors");
 const db = require("manager-schedule");
-//sheduler
-const cron = require("node-cron");
+// sheduler
 
-//running a task every hour
+// running a task every hour
 // cron.schedule("30 3 * * **", async () => {
 // 	await db.drop();
 // 	await db.update(
@@ -49,13 +49,12 @@ function logErr(errors, code) {
           .map((error) => `${error.param} ${error.msg}`)
           .toString()
       );
-      break;
     default:
       return createError(404);
   }
 }
 
-router.put("/schedule/favourite", function (req, res, next) {
+router.put("/schedule/favourite", (req, res, next) => {
   const errors = validationResult(req);
   const {
     stgroup,
@@ -67,7 +66,7 @@ router.put("/schedule/favourite", function (req, res, next) {
     next(logErr(errors, 400));
   } else {
     db.insertFavourite(id, stgroup, group)
-      .then((response) => {
+      .then(() => {
         res.sendStatus(200);
       })
       .catch((err) => {
@@ -76,11 +75,8 @@ router.put("/schedule/favourite", function (req, res, next) {
   }
 });
 
-router.get("/schedule/groups", function (req, res, next) {
+router.get("/schedule/groups", (req, res, next) => {
   const errors = validationResult(req);
-  const {
-    params: { vk_user_id: id },
-  } = req.body;
   const { stgroup } = req.query;
 
   if (!errors.isEmpty()) {
@@ -98,11 +94,8 @@ router.get("/schedule/groups", function (req, res, next) {
   }
 });
 
-router.get("/schedule/lessons", function (req, res, next) {
+router.get("/schedule/lessons", (req, res, next) => {
   const errors = validationResult(req);
-  const {
-    params: { vk_user_id: id },
-  } = req.body;
   const { stgroup, group } = req.query;
   const day = new Date(req.query.day);
 
@@ -127,7 +120,7 @@ router.get("/schedule/lessons", function (req, res, next) {
   }
 });
 
-router.get("/schedule/favourite", function (req, res, next) {
+router.get("/schedule/favourite", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -146,12 +139,8 @@ router.get("/schedule/favourite", function (req, res, next) {
   }
 });
 
-router.get("/schedule/groups", function (req, res, next) {
+router.get("/schedule/groups", (req, res, next) => {
   const errors = validationResult(req);
-  const {
-    params: { vk_user_id: id },
-    stgroup,
-  } = req.body;
 
   if (!errors.isEmpty()) {
     next(logErr(errors, 400));
@@ -168,7 +157,7 @@ router.get("/schedule/groups", function (req, res, next) {
   }
 });
 
-router.get("/schedule/stgroup", function (req, res, next) {
+router.get("/schedule/stgroup", (req, res, next) => {
   const errors = validationResult(req);
   const { stgroup } = req.query;
 
@@ -187,7 +176,7 @@ router.get("/schedule/stgroup", function (req, res, next) {
   }
 });
 
-router.get("/schedule/file", function (req, res, next) {
+router.get("/schedule/file", (req, res, next) => {
   const errors = validationResult(req);
   const { stgroup } = req.query;
 
