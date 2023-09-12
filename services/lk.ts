@@ -3,7 +3,7 @@ const rp = require("request-promise");
 const pathSemesters = "https://lk.stankin.ru/webapi/api2/semesters/";
 const pathMarks = "https://lk.stankin.ru/webapi/api2/marks/";
 
-async function getMarks(student, password, semester) {
+async function getMarks(student: number, password: string, semester: string) {
   const options = {
     method: "POST",
     uri: pathMarks,
@@ -42,13 +42,19 @@ async function getMarks(student, password, semester) {
     ];
   }
 
-  const marks = await rp(options);
+  const marks = (await rp(options)) as [
+    {
+      title: string;
+      num: string;
+      value: number;
+    }
+  ];
   return marks.filter(
     (mark) => mark.title !== "Рейтинг" && mark.title !== "Накопленный Рейтинг"
   );
 }
 
-async function getSemesters(student, password) {
+async function getSemesters(student: number, password: string) {
   const options = {
     method: "POST",
     uri: pathSemesters,
@@ -67,7 +73,7 @@ async function getSemesters(student, password) {
   return response.semesters;
 }
 
-async function getStudent(student, password) {
+async function getStudent(student: number, password: string) {
   const options = {
     method: "POST",
     uri: pathSemesters,

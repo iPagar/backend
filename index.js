@@ -27,6 +27,9 @@ app.disable("x-powered-by");
 
 // check sign
 app.use((req, res, next) => {
+  // if request has api then next
+  if (req.path.includes("/api")) return next();
+
   const xSignHeader = req.headers[`x-sign-header`].slice(1);
 
   check(xSignHeader, process.env.VK_SECURE_MODULI)
