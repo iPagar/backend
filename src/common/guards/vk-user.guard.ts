@@ -4,20 +4,14 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { Request } from "express";
-import { Repository } from "typeorm";
 import qs from "querystring";
 import crypto from "crypto";
 import { z } from "zod";
-import { StudentEntity } from "../../entities/student.entity";
 
 @Injectable()
 export class VkUserGuard implements CanActivate {
-  constructor(
-    @InjectRepository(StudentEntity)
-    private readonly studentRepository: Repository<StudentEntity>
-  ) {}
+  constructor() {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

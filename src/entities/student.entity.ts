@@ -1,10 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Exclude } from "class-transformer";
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryColumn, Column } from "typeorm";
 
 @Entity("students")
 export class StudentEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   @ApiProperty({
     format: "int32",
     example: 12374382,

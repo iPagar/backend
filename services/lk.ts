@@ -1,22 +1,41 @@
-const rp = require("request-promise");
+import axios from "axios";
+import rateLimit from "axios-rate-limit";
 
-const pathSemesters = "https://lk.stankin.ru/webapi/api2/semesters/";
-const pathMarks = "https://lk.stankin.ru/webapi/api2/marks/";
+// sets max 2 requests per 1 second, other will be delayed
+// note maxRPS is a shorthand for perMilliseconds: 1000, and it takes precedence
+// if specified both with maxRequests and perMilliseconds
+const http = rateLimit(axios.create(), {
+  maxRequests: 1,
+  perMilliseconds: 1000,
+});
 
-async function getMarks(student: number, password: string, semester: string) {
+const pathSemesters = "https://lk.stankin.ru/webapi/api2/semesters";
+const pathMarks = "https://lk.stankin.ru/webapi/api2/marks";
+
+export type LkMark = {
+  title: string;
+  num: string;
+  value: number;
+  factor: number;
+};
+
+async function getMarks(
+  student: number,
+  password: string,
+  semester: string
+): Promise<LkMark[]> {
   const options = {
     method: "POST",
-    uri: pathMarks,
+    url: pathMarks,
     headers: {
       "content-type": "application/x-www-form-urlencoded; charset=utf-8",
     },
-    form: {
+    data: {
       student,
       password,
       semester,
     },
     json: true,
-    timeout: 100,
   };
 
   if (student >= 999000 && student <= 999999) {
@@ -42,11 +61,12 @@ async function getMarks(student: number, password: string, semester: string) {
     ];
   }
 
-  const marks = (await rp(options)) as [
+  const marks = (await http(options)).data as [
     {
       title: string;
       num: string;
       value: number;
+      factor: number;
     }
   ];
   return marks.filter(
@@ -54,35 +74,47 @@ async function getMarks(student: number, password: string, semester: string) {
   );
 }
 
-async function getSemesters(student: number, password: string) {
+async function getSemesters(
+  student: number,
+  password: string
+): Promise<string[]> {
   const options = {
     method: "POST",
-    uri: pathSemesters,
-    form: {
+    url: pathSemesters,
+    headers: {
+      "content-type": "application/x-www-form-urlencoded; charset=utf-8",
+    },
+    data: {
       student,
       password,
     },
-    json: true,
-    timeout: 100,
   };
 
   if (student >= 999000 && student <= 999999) {
     return ["2019-осень"];
   }
-  const response = await rp(options);
-  return response.semesters;
+  const response = await http(options);
+  return response.data.semesters;
 }
 
-async function getStudent(student: number, password: string) {
+async function getStudent(
+  student: number,
+  password: string
+): Promise<{
+  stgroup: string;
+  surname: string;
+  initials: string;
+}> {
   const options = {
     method: "POST",
-    uri: pathSemesters,
-    form: {
+    url: pathSemesters,
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    data: {
       student,
       password,
     },
-    json: true,
-    timeout: 100,
   };
 
   if (student >= 999000 && student <= 999999) {
@@ -93,7 +125,7 @@ async function getStudent(student: number, password: string) {
     };
   }
 
-  const response = await rp(options);
+  const response = (await http(options)).data;
   return {
     stgroup: response.stgroup,
     surname: response.surname,
@@ -101,4 +133,4 @@ async function getStudent(student: number, password: string) {
   };
 }
 
-module.exports = { getStudent, getSemesters, getMarks };
+export { getStudent, getSemesters, getMarks };

@@ -11,7 +11,6 @@ const helmet = require("helmet");
 const check = require("vkui-sign-checker");
 // loggers and error handlers
 const createError = require("http-errors");
-const { createExpressServer } = require("routing-controllers");
 const winston = require("./config/winston");
 
 const app = express();

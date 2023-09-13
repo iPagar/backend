@@ -1,16 +1,16 @@
-const cron = require('node-cron');
-const Markup = require('node-vk-bot-api/lib/markup');
-const VkBot = require('node-vk-bot-api');
-const rp = require('request-promise');
-const db = require('./queries');
-const lk = require('./lk');
+const cron = require("node-cron");
+const Markup = require("node-vk-bot-api/lib/markup");
+const VkBot = require("node-vk-bot-api");
+const rp = require("request-promise");
+const db = require("./queries");
+const lk = require("./lk");
 
 const bot = new VkBot({
   token: process.env.VK_BOT,
 });
 
 // running a task every hour
-cron.schedule('0 * * * *', () => {
+cron.schedule("0 * * * *", () => {
   update();
 });
 
@@ -19,7 +19,7 @@ async function checkAllowedMessages(students) {
     // if (students[i].student === 318219)
     console.log(i);
     const options = {
-      method: 'POST',
+      method: "POST",
       uri: `https://api.vk.com/method/messages.isMessagesFromGroupAllowed?group_id=183639424&user_id=${students[i].id}&v=5.126&access_token=${process.env.VK_BOT}`,
       json: true,
     };
@@ -67,7 +67,7 @@ function update() {
           });
         });
       }
-      console.log('vse');
+      console.log("vse");
     })
     .catch((err) => console.log(err));
 }
@@ -94,7 +94,7 @@ async function updateStudent(semester, stud, isLast) {
     });
     await updateRatings(id, semester);
   } catch (e) {
-    console.log(student, e.statusCode, 'lk.getStudent');
+    console.log(student, e.statusCode, "lk.getStudent");
   }
 
   // update marks
@@ -121,13 +121,13 @@ async function updateStudent(semester, stud, isLast) {
       await bot.sendMessage(id, notifyText.text, null, notifyText.keyboard);
     }
   } catch (e) {
-    console.log(e, 'lk.getMarks');
+    console.log(e, "lk.getMarks");
     // return updateStudent(semester, stud, isLast);
   }
 }
 
 async function makeNotifyText(id, updatedMarks, semester, isLast) {
-  let text = '';
+  let text = "";
 
   if (updatedMarks.length && !isLast) text += `${semester}\n\n`;
 
@@ -170,13 +170,13 @@ async function makeNotifyText(id, updatedMarks, semester, isLast) {
     [
       Markup.button({
         action: {
-          type: 'open_app',
-          app_id: '7010368',
-          label: 'Смотреть оценки',
+          type: "open_app",
+          app_id: "7010368",
+          label: "Смотреть оценки",
           payload: JSON.stringify({
-            url: 'https://vk.com/stankin.moduli#marks',
+            url: "https://vk.com/stankin.moduli#marks",
           }),
-          hash: 'marks',
+          hash: "marks",
         },
       }),
     ],
@@ -254,10 +254,10 @@ async function updateMarksBySemester(semester, student, password, id) {
     return updatedMarks;
   } catch (e) {
     if (e.statusCode !== 401) {
-      console.log(student, e.statusCode, 'updating marks');
+      console.log(student, e.statusCode, "updating marks");
       // return updateMarksBySemester(semester, student, password, id);
     } else {
-      console.log(student, e.statusCode, 'updating marks');
+      console.log(student, e.statusCode, "updating marks");
       return [];
     }
   }
@@ -274,7 +274,7 @@ function notifyStud(semester, stud, semesters) {
         registerStudent(student, password, id).then(() =>
           db.getMarks(id, semester).then(async (newMarks) => {
             if (notify) {
-              let text = '';
+              let text = "";
 
               const updatedMarks = newMarks.filter((newMark) => {
                 const found = prevMarks.some(
@@ -320,13 +320,13 @@ function notifyStud(semester, stud, semesters) {
                     [
                       Markup.button({
                         action: {
-                          type: 'open_app',
-                          app_id: '7010368',
-                          label: 'Смотреть оценки',
+                          type: "open_app",
+                          app_id: "7010368",
+                          label: "Смотреть оценки",
                           payload: JSON.stringify({
-                            url: 'https://vk.com/stankin.moduli#marks',
+                            url: "https://vk.com/stankin.moduli#marks",
                           }),
-                          hash: 'marks',
+                          hash: "marks",
                         },
                       }),
                     ],
@@ -391,7 +391,7 @@ function registerStudent(student, password, id) {
     .catch((e) => console.log(e));
 }
 
-function updateSemesters(student, password) {
+export function updateSemesters(student, password) {
   return lk
     .getSemesters(student, password)
     .then((semesters) =>
@@ -468,19 +468,19 @@ function updateRatings(id, semester) {
         Object.keys(subject.marks).forEach((module) => {
           const value = subject.marks[module];
 
-          if (module === 'М1') {
+          if (module === "М1") {
             sumFactorSubject += 3;
             sumSubject += value * 3;
-          } else if (module === 'М2') {
+          } else if (module === "М2") {
             sumFactorSubject += 2;
             sumSubject += value * 2;
-          } else if (module === 'З') {
+          } else if (module === "З") {
             sumFactorSubject += 5;
             sumSubject += value * 5;
-          } else if (module === 'К') {
+          } else if (module === "К") {
             sumFactorSubject += 5;
             sumSubject += value * 5;
-          } else if (module === 'Э') {
+          } else if (module === "Э") {
             sumFactorSubject += 7;
             sumSubject += value * 7;
           }
@@ -570,5 +570,5 @@ module.exports = {
   getSchStudents,
   getIsMe,
   addMe,
-  getMarksHistory
+  getMarksHistory,
 };
