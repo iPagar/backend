@@ -10,8 +10,9 @@
   "scripts": {
     "start": "cross-env ENV=production nest start",
     "dev": "cross-env ENV=development nest start --watch",
-    "start:prod": "cross-env ENV=production node index.js",
-    "test": "node test.js"
+    "start:prod": "cross-env ENV=production node index.js --name stankin-backend",
+    "test": "node test.js",
+    "build": "nest build"
   },
   "dependencies": {
     "@nestjs/cli": "^10.1.17",
