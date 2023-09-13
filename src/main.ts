@@ -9,6 +9,7 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 async function bootstrap() {
   const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(app));
   nestApp.setGlobalPrefix("api");
+  nestApp.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle("Stankin.Moduli API")
