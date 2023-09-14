@@ -2,7 +2,8 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import * as dotenv from "dotenv";
-import { StudentsModule } from "./modules/students.module";
+import { StudentsModule } from "./modules/students/students.module";
+import { MarksModule } from "./modules/marks/marks.module";
 dotenv.config();
 
 @Module({
@@ -13,6 +14,7 @@ dotenv.config();
       autoLoadEntities: true,
     }),
     StudentsModule,
+    MarksModule,
   ],
 })
 export class AppModule {

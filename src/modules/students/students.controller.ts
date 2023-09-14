@@ -13,20 +13,27 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { StudentEntity } from "../entities/student.entity";
+import { StudentEntity } from "../../entities/student.entity";
 import { DataSource, Repository } from "typeorm";
 import { ApiBody, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { GetStudentDto } from "./dto/get-student.dto";
-import { VkUserGuard, VkUser } from "../common/guards/vk-user.guard";
-import { VkUserParam } from "../common/decorators/vk-user.decorator";
+import { VkUserGuard, VkUser } from "../../common/guards/vk-user.guard";
+import { VkUserParam } from "../../common/decorators/vk-user.decorator";
 import { LoginDto } from "./dto/login.dto";
-import db from "../../services/queries";
-import { SemesterEntity } from "../entities/semester.entity";
-import { MarkEntity } from "../entities/mark.entity";
-import { LkMark, getMarks, getSemesters, getStudent } from "../../services/lk";
+import db from "../../../services/queries";
+import { SemesterEntity } from "../../entities/semester.entity";
+import { MarkEntity } from "../../entities/mark.entity";
+import {
+  LkMark,
+  getMarks,
+  getSemesters,
+  getStudent,
+} from "../../../services/lk";
 import { Response } from "express";
-import { RatingEntity } from "../entities/rating.entity";
-import { DisabledGuard } from "../common/guards/disabled.guard";
+import { RatingEntity } from "../../entities/rating.entity";
+import { DisabledGuard } from "../../common/guards/disabled.guard";
+import { StudentGuard } from "../../common/guards/student.guard";
+import { StudentParam } from "../../common/decorators/student.decorator";
 
 function getRating(
   subjects: {
@@ -159,20 +166,6 @@ export class StudentsController {
     return this.studentRepository.find();
   }
 
-  @Get(":id")
-  @ApiOkResponse({
-    description: "Student retrieved successfully",
-    type: GetStudentDto,
-  })
-  @UseGuards(DisabledGuard)
-  getOne(@Param("id") id: number) {
-    return this.studentRepository.findOne({
-      where: {
-        id,
-      },
-    });
-  }
-
   @Post("login")
   @ApiBody({
     description: "Student's id and password",
@@ -288,5 +281,38 @@ export class StudentsController {
     await this.studentRepository.delete(vkUser.vk_user_id);
 
     res.status(200).send();
+  }
+
+  @Get("semesters")
+  @ApiOkResponse({
+    description: "Student's semesters retrieved successfully",
+    type: [String],
+  })
+  @UseGuards(StudentGuard)
+  async getStudentSemesters(@StudentParam() student: StudentEntity) {
+    const data = await this.dataSource
+      .getRepository(MarkEntity)
+      .createQueryBuilder()
+      .where({
+        id: student.id,
+      })
+      .distinctOn(["semester"])
+      .getMany();
+
+    return data.map((mark) => mark.semester);
+  }
+
+  @Get(":id")
+  @ApiOkResponse({
+    description: "Student retrieved successfully",
+    type: GetStudentDto,
+  })
+  @UseGuards(DisabledGuard)
+  getOne(@Param("id") id: number) {
+    return this.studentRepository.findOne({
+      where: {
+        id,
+      },
+    });
   }
 }

@@ -15,43 +15,43 @@ export class VkUserGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const vkUser = this.extractVkUserFromHeader(request);
+    const vkUser = extractVkUserFromHeader(request);
 
     request["vkUser"] = vkUser;
 
     return true;
   }
+}
 
-  private extractVkUserFromHeader(request: Request) {
-    const xSignHeader = request.headers[`x-sign-header`]?.slice(1);
+export function extractVkUserFromHeader(request: Request) {
+  const xSignHeader = request.headers[`x-sign-header`]?.slice(1);
 
-    if (typeof xSignHeader !== "string") {
+  if (typeof xSignHeader !== "string") {
+    throw new UnauthorizedException();
+  }
+
+  if (
+    !process.env.VK_SECURE_MODULI ||
+    !process.env.VK_SECURE_SCHEDULE ||
+    !process.env.VK_OL
+  ) {
+    throw new UnauthorizedException();
+  }
+
+  try {
+    const vk = checkVkSign(xSignHeader, [
+      process.env.VK_SECURE_MODULI,
+      process.env.VK_SECURE_SCHEDULE,
+      process.env.VK_OL,
+    ]);
+
+    return vk;
+  } catch {
+    if (!process.env.TEST_SIGN) {
       throw new UnauthorizedException();
     }
 
-    if (
-      !process.env.VK_SECURE_MODULI ||
-      !process.env.VK_SECURE_SCHEDULE ||
-      !process.env.VK_OL
-    ) {
-      throw new UnauthorizedException();
-    }
-
-    try {
-      const vk = checkVkSign(xSignHeader, [
-        process.env.VK_SECURE_MODULI,
-        process.env.VK_SECURE_SCHEDULE,
-        process.env.VK_OL,
-      ]);
-
-      return vk;
-    } catch {
-      if (!process.env.TEST_SIGN) {
-        throw new UnauthorizedException();
-      }
-
-      return checkTestSign(xSignHeader, process.env.TEST_SIGN);
-    }
+    return checkTestSign(xSignHeader, process.env.TEST_SIGN);
   }
 }
 

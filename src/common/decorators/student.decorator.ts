@@ -1,9 +1,9 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
-import { VkUser } from "../guards/vk-user.guard";
+import { StudentEntity } from "../../entities/student.entity";
 
-export const VkUserParam = createParamDecorator(
+export const StudentParam = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return request.vkUser as VkUser;
+    return request.student as StudentEntity;
   }
 );
