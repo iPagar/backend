@@ -1,21 +1,15 @@
 import { Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { InjectRepository } from "@nestjs/typeorm";
 import { MarkEntity } from "../../entities/mark.entity";
-import { Repository } from "typeorm";
 import { StudentGuard } from "../../common/guards/student.guard";
 import { StudentParam } from "../../common/decorators/student.decorator";
 import { StudentEntity } from "../../entities/student.entity";
+import { PrismaService } from "../../prisma.service";
 
 @Controller("marks")
 @ApiTags("Marks")
 export class MarksController {
-  constructor(
-    @InjectRepository(MarkEntity)
-    private readonly marksRepository: Repository<MarkEntity>,
-    @InjectRepository(StudentEntity)
-    private readonly studentRepository: Repository<StudentEntity>
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   @Get("/notify")
   @UseGuards(StudentGuard)
@@ -35,7 +29,15 @@ export class MarksController {
   })
   async switchNotify(@StudentParam() student: StudentEntity) {
     student.notify = !student.notify;
-    await this.studentRepository.save(student);
+    await this.prisma.students.update({
+      where: {
+        id: student.id,
+      },
+      data: {
+        notify: student.notify,
+      },
+    });
+
     return student.notify;
   }
 
@@ -49,9 +51,11 @@ export class MarksController {
     @StudentParam() student: StudentEntity,
     @Param("semester") semester: string
   ) {
-    return this.marksRepository.find({
+    return this.prisma.marks.findMany({
       where: {
-        student,
+        students: {
+          id: student.id,
+        },
         semester,
       },
     });

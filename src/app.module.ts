@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import * as dotenv from "dotenv";
 import { StudentsModule } from "./modules/students/students.module";
 import { MarksModule } from "./modules/marks/marks.module";
+import { TypeOrmModule } from "@nestjs/typeorm";
 dotenv.config();
 
 @Module({

@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model comments {
+  id        Int
+  name      String   @db.VarChar(250)
+  score     Int      @db.SmallInt
+  isPublic  Boolean  @default(true)
+  createdAt DateTime @default(dbgenerated("(now() + '03:00:00'::interval)")) @db.Date
+  text      String?  @db.VarChar
+  students  students @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  teachers  teachers @relation(fields: [name], references: [name], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id, name], map: "comment_pkey")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model copy {
+  student    Int?
+  password   String?  @db.VarChar(30)
+  surname    String?  @db.VarChar(30)
+  initials   String?  @db.VarChar(30)
+  stgroup    String?  @db.VarChar(30)
+  id         Int?
+  notify     Boolean?
+  is_deleted Boolean?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model history_marks {
+  id         Int        @default(autoincrement())
+  student    Int?
+  semester   String?    @db.VarChar(10)
+  subject    String?    @db.VarChar(200)
+  module     String?    @db.VarChar(2)
+  prev_value Int?
+  next_value Int?
+  operation  String?
+  created_at DateTime?  @default(now()) @db.Timestamp(6)
+  semesters  semesters? @relation(fields: [semester], references: [semester], onDelete: NoAction, onUpdate: NoAction)
+
+  @@ignore
+}
+
+model likes {
+  to_id                            Int
+  from_id                          Int
+  students_likes_from_idTostudents students @relation("likes_from_idTostudents", fields: [from_id], references: [id], onDelete: Cascade)
+  students_likes_to_idTostudents   students @relation("likes_to_idTostudents", fields: [to_id], references: [id], onDelete: Cascade)
+
+  @@id([to_id, from_id])
+}
+
+model marks {
+  id        Int
+  semester  String    @db.VarChar(10)
+  subject   String    @db.VarChar(200)
+  module    String    @db.VarChar(2)
+  value     Int
+  factor    Float
+  students  students  @relation(fields: [id], references: [id], onDelete: Cascade)
+  semesters semesters @relation(fields: [semester], references: [semester], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id, semester, subject, module])
+}
+
+model messages {
+  id                                  Int       @id @default(autoincrement())
+  from_id                             Int?
+  to_id                               Int?
+  text                                String    @db.VarChar(500)
+  read                                Boolean?  @default(false)
+  sendtime                            DateTime? @default(now()) @db.Timestamp(6)
+  students_messages_from_idTostudents students? @relation("messages_from_idTostudents", fields: [from_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  students_messages_to_idTostudents   students? @relation("messages_to_idTostudents", fields: [to_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ol {
+  id       Int      @id
+  students students @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model ratings {
+  id        Int
+  semester  String    @db.VarChar(10)
+  rating    Float
+  students  students  @relation(fields: [id], references: [id], onDelete: Cascade)
+  semesters semesters @relation(fields: [semester], references: [semester], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id, semester])
+}
+
+model sch {
+  id      Int    @id
+  fio     String @db.VarChar(20)
+  stgroup String @db.VarChar(20)
+}
+
+model schoolarship {
+  start_date DateTime @db.Timestamp(6)
+  type       Int      @db.SmallInt
+  value      Int?     @db.SmallInt
+
+  @@id([start_date, type])
+}
+
+model semesters {
+  semester      String          @id @db.VarChar(30)
+  history_marks history_marks[] @ignore
+  marks         marks[]
+  ratings       ratings[]
+}
+
+model students {
+  student                             Int                  @id
+  password                            String?              @db.VarChar(30)
+  surname                             String?              @db.VarChar(30)
+  initials                            String?              @db.VarChar(30)
+  stgroup                             String?              @db.VarChar(30)
+  id                                  Int                  @unique
+  notify                              Boolean?             @default(false)
+  is_deleted                          Boolean              @default(false)
+  comments                            comments[]
+  likes_likes_from_idTostudents       likes[]              @relation("likes_from_idTostudents")
+  likes_likes_to_idTostudents         likes[]              @relation("likes_to_idTostudents")
+  marks                               marks[]
+  messages_messages_from_idTostudents messages[]           @relation("messages_from_idTostudents")
+  messages_messages_to_idTostudents   messages[]           @relation("messages_to_idTostudents")
+  ol                                  ol?
+  ratings                             ratings[]
+  teachers_comments                   teachers_comments[]
+  teachers_reactions                  teachers_reactions[]
+}
+
+model teachers {
+  name               String               @id @db.VarChar(250)
+  position           String               @db.VarChar(250)
+  qualification      String               @db.VarChar(20)
+  updatedAt          DateTime?            @db.Date
+  createdAt          DateTime?            @db.Date
+  subjects           String
+  comments           comments[]
+  teachers_comments  teachers_comments[]
+  teachers_reactions teachers_reactions[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model teachers_comments {
+  id         Int
+  name       String   @db.VarChar(250)
+  comment    String   @db.VarChar
+  is_public  Boolean  @default(true)
+  created_at DateTime @default(dbgenerated("(now() + '03:00:00'::interval)")) @db.Date
+  students   students @relation(fields: [id], references: [id], onDelete: Cascade)
+  teachers   teachers @relation(fields: [name], references: [name], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id, name])
+}
+
+model teachers_reactions {
+  id       Int
+  name     String   @db.VarChar(250)
+  reaction Int
+  students students @relation(fields: [id], references: [id], onDelete: Cascade)
+  teachers teachers @relation(fields: [name], references: [name], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([id, name])
+}
+
+model vk_ref_platform {
+  number         Int    @id @default(autoincrement())
+  id             Int
+  vk_platform    String @db.VarChar
+  vk_ref         String @db.VarChar
+  vk_is_favorite String @db.VarChar
+}

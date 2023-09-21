@@ -21,6 +21,7 @@
     "@nestjs/platform-express": "^10.2.5",
     "@nestjs/swagger": "^7.1.11",
     "@nestjs/typeorm": "^10.0.0",
+    "@prisma/client": "^5.3.1",
     "app-root-path": "^3.0.0",
     "async": "^3.2.0",
     "axios": "^1.5.0",
@@ -44,6 +45,7 @@
     "node-cron": "^2.0.3",
     "node-vk-bot-api": "^3.3.4",
     "pg": "^8.5.1",
+    "puppeteer": "^21.2.1",
     "reflect-metadata": "^0.1.13",
     "request-promise": "^4.2.6",
     "rxjs": "^7.8.1",
@@ -68,6 +70,7 @@
     "nodemon": "^1.19.4",
     "npm": "^10.1.0",
     "prettier": "^2.3.2",
+    "prisma": "^5.3.1",
     "ts-node": "^10.9.1"
   },
   "author": "",
