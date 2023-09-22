@@ -4,6 +4,8 @@ import * as dotenv from "dotenv";
 import { StudentsModule } from "./modules/students/students.module";
 import { MarksModule } from "./modules/marks/marks.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { AppController } from "./app.controller";
+import { PrismaService } from "./prisma.service";
 dotenv.config();
 
 @Module({
@@ -16,6 +18,8 @@ dotenv.config();
     StudentsModule,
     MarksModule,
   ],
+  providers: [PrismaService],
+  controllers: [AppController],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {}

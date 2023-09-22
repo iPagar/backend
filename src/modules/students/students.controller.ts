@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { StudentEntity } from "../../entities/student.entity";
-import { ApiBody, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
 import { GetStudentDto } from "./dto/get-student.dto";
 import { VkUserGuard, VkUser } from "../../common/guards/vk-user.guard";
 import { VkUserParam } from "../../common/decorators/vk-user.decorator";
@@ -57,9 +57,22 @@ export class StudentsController {
     description: "Students retrieved successfully",
     type: [GetStudentDto],
   })
-  @UseGuards(DisabledGuard)
-  getAll() {
-    return this.prisma.students.findMany();
+  @ApiParam({
+    name: "semester",
+    description: "Semester to filter by",
+    required: false,
+  })
+  @UseGuards(VkUserGuard)
+  getAll(@Param("semester") semester?: string) {
+    return this.prisma.students.findMany({
+      where: {
+        marks: {
+          some: {
+            semester,
+          },
+        },
+      },
+    });
   }
 
   @Post("login")
