@@ -1,32 +1,26 @@
-const express = require('express');
-const { validationResult } = require('express-validator');
-const createError = require('http-errors');
-const db = require('manager-teachers');
-const rp = require('request-promise');
-const cron = require('node-cron');
-const { v4: uuidv4 } = require('uuid');
-const newDb = require('../dbs/teachers');
-const scheduleDb = require('../dbs/schedule');
-const studentDb = require('../services/control');
+const express = require("express");
+const { validationResult } = require("express-validator");
+const createError = require("http-errors");
+const db = require("manager-teachers");
+const rp = require("request-promise");
+const cron = require("node-cron");
+const { v4: uuidv4 } = require("uuid");
+const newDb = require("../dbs/teachers");
+const scheduleDb = require("../dbs/schedule");
+const studentDb = require("../services/control");
 
 const router = express.Router();
 
-// running a task every hour
-cron.schedule('50 4 * * **', () => {
-  db.updateTeachers();
-});
-// db.updateTeachers().then(() => console.log(1));
-
 async function getTeacherDetail(name) {
-  const path = 'https://stankin.ru/api_entry.php';
+  const path = "https://stankin.ru/api_entry.php";
 
   const optionsSearchInfo = {
-    method: 'POST',
+    method: "POST",
     uri: path,
     body: {
-      action: 'search',
+      action: "search",
       data: {
-        type: 'users',
+        type: "users",
         query: name,
         page: 1,
         count: 20,
@@ -48,15 +42,15 @@ async function getTeacherDetail(name) {
       } else return createError(404);
     })
     .catch(() => {
-      if (process.env.env === 'development') console.log('searchInfo', name);
+      if (process.env.env === "development") console.log("searchInfo", name);
     });
 
   if (searchInfo) {
     const optionsTeacherInfo = {
-      method: 'POST',
+      method: "POST",
       uri: path,
       body: {
-        action: 'getStuff',
+        action: "getStuff",
         data: { subdivision_id: searchInfo.subdivisionId },
       },
       json: true,
@@ -70,14 +64,14 @@ async function getTeacherDetail(name) {
           )[0].user;
 
           return {
-            email: email !== 'example@mail.com' ? email : null,
+            email: email !== "example@mail.com" ? email : null,
             phone,
             avatar,
           };
         } else return createError(404);
       })
       .catch(() => {
-        if (process.env.env === 'development') console.log('teacherInfo', name);
+        if (process.env.env === "development") console.log("teacherInfo", name);
       });
 
     return teacherInfo;
@@ -140,7 +134,7 @@ function logErr(errors, code) {
       return createError(404);
   }
 }
-router.get('/teachers/my', async (req, res, next) => {
+router.get("/teachers/my", async (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -191,7 +185,7 @@ router.get('/teachers/my', async (req, res, next) => {
   }
 });
 
-router.get('/teachers', (req, res, next) => {
+router.get("/teachers", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -245,7 +239,7 @@ router.get('/teachers', (req, res, next) => {
   }
 });
 
-router.get('/teachers/reactions', (req, res, next) => {
+router.get("/teachers/reactions", (req, res, next) => {
   const errors = validationResult(req);
   const { name } = req.query;
 
@@ -265,7 +259,7 @@ router.get('/teachers/reactions', (req, res, next) => {
   }
 });
 
-router.get('/teachers/comments', (req, res, next) => {
+router.get("/teachers/comments", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -292,7 +286,7 @@ router.get('/teachers/comments', (req, res, next) => {
   }
 });
 
-router.put('/teachers/reactions', (req, res, next) => {
+router.put("/teachers/reactions", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -316,7 +310,7 @@ router.put('/teachers/reactions', (req, res, next) => {
   }
 });
 
-router.delete('/teachers/reactions', (req, res, next) => {
+router.delete("/teachers/reactions", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -330,7 +324,7 @@ router.delete('/teachers/reactions', (req, res, next) => {
       .deleteReaction(id, name)
       .then((comments) => {
         if (comments) {
-          res.send('ok');
+          res.send("ok");
         } else next(logErr(errors));
       })
       .catch((err) => {
@@ -339,7 +333,7 @@ router.delete('/teachers/reactions', (req, res, next) => {
   }
 });
 
-router.put('/teachers/comments', (req, res, next) => {
+router.put("/teachers/comments", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -364,7 +358,7 @@ router.put('/teachers/comments', (req, res, next) => {
   }
 });
 
-router.delete('/teachers/comments', (req, res, next) => {
+router.delete("/teachers/comments", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -378,7 +372,7 @@ router.delete('/teachers/comments', (req, res, next) => {
       .deleteComment(id, name)
       .then((comments) => {
         if (comments) {
-          res.send('ok');
+          res.send("ok");
         } else next(logErr(errors));
       })
       .catch((err) => {
@@ -387,7 +381,7 @@ router.delete('/teachers/comments', (req, res, next) => {
   }
 });
 
-router.put('/teachers/comments/score', (req, res, next) => {
+router.put("/teachers/comments/score", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -412,7 +406,7 @@ router.put('/teachers/comments/score', (req, res, next) => {
   }
 });
 
-router.delete('/teachers/comments/score', (req, res, next) => {
+router.delete("/teachers/comments/score", (req, res, next) => {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -426,7 +420,7 @@ router.delete('/teachers/comments/score', (req, res, next) => {
       .deleteComment(to_id, name, id)
       .then((scores) => {
         if (scores) {
-          res.send('ok');
+          res.send("ok");
         } else next(logErr(errors));
       })
       .catch((err) => {

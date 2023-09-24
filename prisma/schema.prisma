@@ -7,20 +7,6 @@ datasource db {
   url      = env("DB_URL")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model comments {
-  id        Int
-  name      String   @db.VarChar(250)
-  score     Int      @db.SmallInt
-  isPublic  Boolean  @default(true)
-  createdAt DateTime @default(dbgenerated("(now() + '03:00:00'::interval)")) @db.Date
-  text      String?  @db.VarChar
-  students  students @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  teachers  teachers @relation(fields: [name], references: [name], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([id, name], map: "comment_pkey")
-}
-
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model copy {
   student    Int?
@@ -130,7 +116,6 @@ model students {
   id                                  Int                  @unique
   notify                              Boolean?             @default(false)
   is_deleted                          Boolean              @default(false)
-  comments                            comments[]
   likes_likes_from_idTostudents       likes[]              @relation("likes_from_idTostudents")
   likes_likes_to_idTostudents         likes[]              @relation("likes_to_idTostudents")
   marks                               marks[]
@@ -143,15 +128,21 @@ model students {
 }
 
 model teachers {
+  id                 String               @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name               String               @id @db.VarChar(250)
-  position           String               @db.VarChar(250)
-  qualification      String               @db.VarChar(20)
-  updatedAt          DateTime?            @db.Date
-  createdAt          DateTime?            @db.Date
+  position           String               @db.VarChar(400)
+  qualification      String               @db.VarChar(200)
+  updatedAt          DateTime             @updatedAt
+  createdAt          DateTime             @default(now()) @db.Date
   subjects           String
-  comments           comments[]
+  status             Status               @default(active)
   teachers_comments  teachers_comments[]
   teachers_reactions teachers_reactions[]
+}
+
+enum Status {
+  active
+  inactive
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

@@ -6,10 +6,13 @@ import { MarksModule } from "./modules/marks/marks.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AppController } from "./app.controller";
 import { PrismaService } from "./prisma.service";
+import { TeachersModule } from "./modules/teachers/teachers.module";
+import { ScheduleModule } from "@nestjs/schedule";
 dotenv.config();
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: "postgres",
       url: process.env.DB_URL,
@@ -17,6 +20,7 @@ dotenv.config();
     }),
     StudentsModule,
     MarksModule,
+    TeachersModule,
   ],
   providers: [PrismaService],
   controllers: [AppController],

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "teachers" ALTER COLUMN "position" SET DATA TYPE VARCHAR(400),
+ALTER COLUMN "qualification" SET DATA TYPE VARCHAR(200);
