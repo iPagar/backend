@@ -66,8 +66,6 @@ const schedule = require("./routes/schedule");
 const teachers = require("./routes/teachers");
 const ol = require("./routes/ol");
 
-if (process.env.NODE_ENV === "production") {
-  app.use([manage, schedule, teachers, ol]);
-}
+app.use([manage, schedule, teachers, ol]);
 
 export { app };

@@ -1,13 +1,13 @@
-const express = require('express');
-const { check, validationResult } = require('express-validator');
-const createError = require('http-errors');
-const rp = require('request-promise');
-const db = require('../services/control');
-const q = require('../services/queries');
+const express = require("express");
+const { check, validationResult } = require("express-validator");
+const createError = require("http-errors");
+const rp = require("request-promise");
+const db = require("../services/control");
+const q = require("../services/queries");
 
 const router = express.Router();
 
-router.post('/student', (req, res, next) => {
+router.post("/student", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -39,7 +39,7 @@ router.post('/student', (req, res, next) => {
   }
 });
 
-router.get('/marks/history', (req, res, next) => {
+router.get("/marks/history", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -62,9 +62,9 @@ router.get('/marks/history', (req, res, next) => {
         next(createError(err));
       });
   }
-})
+});
 
-router.get('/additional', async (req, res, next) => {
+router.get("/additional", async (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -81,8 +81,8 @@ router.get('/additional', async (req, res, next) => {
   } else {
     try {
       const optionsVk = {
-        method: 'GET',
-        uri: 'https://api.vk.com/method/groups.isMember',
+        method: "GET",
+        uri: "https://api.vk.com/method/groups.isMember",
         qs: {
           group_id: 183639424,
           user_id: params.vk_user_id,
@@ -105,7 +105,7 @@ router.get('/additional', async (req, res, next) => {
   }
 });
 
-router.delete('/student', (req, res, next) => {
+router.delete("/student", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -131,12 +131,12 @@ router.delete('/student', (req, res, next) => {
 });
 
 router.put(
-  '/student',
+  "/student",
   [
-    check('password')
+    check("password")
       .isLength({ min: 1 })
-      .withMessage('must be at least 1 chars long'),
-    check('student').isLength({ min: 6, max: 6 }),
+      .withMessage("must be at least 1 chars long"),
+    check("student").isLength({ min: 6, max: 6 }),
   ],
   (req, res, next) => {
     const errors = validationResult(req);
@@ -164,11 +164,11 @@ router.put(
 );
 
 router.post(
-  '/marks',
+  "/marks",
   [
-    check('semester')
+    check("semester")
       .isLength({ min: 10, max: 10 })
-      .withMessage('must be at least 10 chars long'),
+      .withMessage("must be at least 10 chars long"),
   ],
   (req, res, next) => {
     const errors = validationResult(req);
@@ -196,7 +196,7 @@ router.post(
   }
 );
 
-router.get('/scholarships', (req, res, next) => {
+router.get("/scholarships", (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -220,7 +220,7 @@ router.get('/scholarships', (req, res, next) => {
   }
 });
 
-router.post('/semesters', (req, res, next) => {
+router.post("/semesters", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -245,7 +245,7 @@ router.post('/semesters', (req, res, next) => {
   }
 });
 
-router.post('/allrating', (req, res, next) => {
+router.post("/allrating", (req, res, next) => {
   const errors = validationResult(req);
   const { semester } = req.body;
 
@@ -270,7 +270,7 @@ router.post('/allrating', (req, res, next) => {
   }
 });
 
-router.post('/allmodules', (req, res, next) => {
+router.post("/allmodules", (req, res, next) => {
   const errors = validationResult(req);
   const { semester, subject, module } = req.body;
 
@@ -295,7 +295,7 @@ router.post('/allmodules', (req, res, next) => {
   }
 });
 
-router.post('/rating', (req, res, next) => {
+router.post("/rating", (req, res, next) => {
   const errors = validationResult(req);
   const { semester, search, offset } = req.body;
 
@@ -320,7 +320,7 @@ router.post('/rating', (req, res, next) => {
   }
 });
 
-router.post('/ratingst', (req, res, next) => {
+router.post("/ratingst", (req, res, next) => {
   const errors = validationResult(req);
   const { params, semester } = req.body;
 
@@ -345,7 +345,7 @@ router.post('/ratingst', (req, res, next) => {
   }
 });
 
-router.post('/notify', (req, res, next) => {
+router.post("/notify", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -372,7 +372,7 @@ router.post('/notify', (req, res, next) => {
 
 // dating
 
-router.post('/dater', (req, res, next) => {
+router.post("/dater", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -403,12 +403,12 @@ router.post('/dater', (req, res, next) => {
 });
 
 router.put(
-  '/dater',
+  "/dater",
   [
-    check('description')
+    check("description")
       .isLength({ min: 1 })
-      .withMessage('must be at least 1 chars long'),
-    check('photo').isLength({ min: 1 }),
+      .withMessage("must be at least 1 chars long"),
+    check("photo").isLength({ min: 1 }),
   ],
   (req, res, next) => {
     const errors = validationResult(req);
@@ -436,7 +436,7 @@ router.put(
   }
 );
 
-router.delete('/dater', (req, res, next) => {
+router.delete("/dater", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -461,7 +461,7 @@ router.delete('/dater', (req, res, next) => {
   }
 });
 
-router.post('/discover', (req, res, next) => {
+router.post("/discover", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -486,7 +486,7 @@ router.post('/discover', (req, res, next) => {
   }
 });
 
-router.post('/like', check('to_id').isLength({ min: 1 }), (req, res, next) => {
+router.post("/like", check("to_id").isLength({ min: 1 }), (req, res, next) => {
   const errors = validationResult(req);
   const { params, to_id } = req.body;
 
@@ -511,7 +511,7 @@ router.post('/like', check('to_id').isLength({ min: 1 }), (req, res, next) => {
   }
 });
 
-router.post('/matches', (req, res, next) => {
+router.post("/matches", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -536,7 +536,7 @@ router.post('/matches', (req, res, next) => {
   }
 });
 
-router.post('/messages', (req, res, next) => {
+router.post("/messages", (req, res, next) => {
   const errors = validationResult(req);
   const { params, from_id } = req.body;
 
@@ -561,7 +561,7 @@ router.post('/messages', (req, res, next) => {
   }
 });
 
-router.put('/message', (req, res, next) => {
+router.put("/message", (req, res, next) => {
   const errors = validationResult(req);
   const { params, to_id, text } = req.body;
 
@@ -586,7 +586,7 @@ router.put('/message', (req, res, next) => {
   }
 });
 
-router.post('/readmessage', (req, res, next) => {
+router.post("/readmessage", (req, res, next) => {
   const errors = validationResult(req);
   const { params, id } = req.body;
 
@@ -612,7 +612,7 @@ router.post('/readmessage', (req, res, next) => {
 });
 
 // schedule
-router.get('/sch/students', (req, res, next) => {
+router.get("/sch/students", (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     next(
@@ -635,7 +635,7 @@ router.get('/sch/students', (req, res, next) => {
   }
 });
 
-router.get('/sch/isme', (req, res, next) => {
+router.get("/sch/isme", (req, res, next) => {
   const errors = validationResult(req);
   const { params } = req.body;
 
@@ -660,7 +660,7 @@ router.get('/sch/isme', (req, res, next) => {
   }
 });
 
-router.post('/sch/addme', async (req, res, next) => {
+router.post("/sch/addme", async (req, res, next) => {
   const errors = validationResult(req);
   const { params, fio, stgroup } = req.body;
 

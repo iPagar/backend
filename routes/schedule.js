@@ -3,7 +3,8 @@ const express = require("express");
 const router = express.Router();
 const { validationResult } = require("express-validator");
 const createError = require("http-errors");
-const db = require("manager-schedule");
+const db = require("../services/mongo-driver").default;
+const ms = require("../services/manager-schedule");
 // sheduler
 
 // running a task every hour
@@ -16,28 +17,23 @@ const db = require("manager-schedule");
 // 	await db.update(new RegExp(/Аспирантура/), new RegExp(/Расписание/));
 // });
 
-//  (async () => {
-//    await db.drop();
-//    await db.update(
-//      new RegExp(/Бакалавриат/),
-//      new RegExp(/курс/),
-// new RegExp(/417842|415796|415797|415798/)
-//    );
-
-//    await db.update(
-//      new RegExp(/Магистратура/),
-//      new RegExp(/курс/),
-//      new RegExp(/415800|415801|416606|416607/)
-// );
-
-//    await db.update(
-// new RegExp(/Специалитет/),
-//      new RegExp(/курс|занятий/),
-//      new RegExp(/415799/)
-// );
-
-// await db.update(new RegExp(/Аспирантура/), new RegExp(/Расписание/));
-//  })().then(() => console.log(1));
+// (async () => {
+//   try {
+//     await db.drop();
+//     await ms.update(
+//       new RegExp(/Бакалавриат/),
+//       new RegExp(/^1 курс$|^2 курс$|^3 курс$|^4 курс$/)
+//     );
+//     await ms.update(
+//       new RegExp(/Специалитет/),
+//       new RegExp(/Расписание занятий/)
+//     );
+//     await ms.update(new RegExp(/Магистратура/), new RegExp(/^1 курс$|^2 курс/));
+//     await ms.update(new RegExp(/Аспирантура/), new RegExp(/Расписание/));
+//   } catch (err) {
+//     console.log(err);
+//   }
+// })().then(() => console.log(1));
 
 function logErr(errors, code) {
   switch (code) {
@@ -49,12 +45,13 @@ function logErr(errors, code) {
           .map((error) => `${error.param} ${error.msg}`)
           .toString()
       );
+      break;
     default:
       return createError(404);
   }
 }
 
-router.put("/schedule/favourite", (req, res, next) => {
+router.put("/schedule/favourite", function (req, res, next) {
   const errors = validationResult(req);
   const {
     stgroup,
@@ -66,7 +63,7 @@ router.put("/schedule/favourite", (req, res, next) => {
     next(logErr(errors, 400));
   } else {
     db.insertFavourite(id, stgroup, group)
-      .then(() => {
+      .then((response) => {
         res.sendStatus(200);
       })
       .catch((err) => {
@@ -75,8 +72,11 @@ router.put("/schedule/favourite", (req, res, next) => {
   }
 });
 
-router.get("/schedule/groups", (req, res, next) => {
+router.get("/schedule/groups", function (req, res, next) {
   const errors = validationResult(req);
+  const {
+    params: { vk_user_id: id },
+  } = req.body;
   const { stgroup } = req.query;
 
   if (!errors.isEmpty()) {
@@ -94,8 +94,11 @@ router.get("/schedule/groups", (req, res, next) => {
   }
 });
 
-router.get("/schedule/lessons", (req, res, next) => {
+router.get("/schedule/lessons", function (req, res, next) {
   const errors = validationResult(req);
+  const {
+    params: { vk_user_id: id },
+  } = req.body;
   const { stgroup, group } = req.query;
   const day = new Date(req.query.day);
 
@@ -105,13 +108,24 @@ router.get("/schedule/lessons", (req, res, next) => {
     db.getLessons(stgroup, group, day)
       .then((lessons) => {
         if (lessons) {
-          res.send(
-            lessons.sort(
+          const filtered = lessons
+            .sort(
               (a, b) =>
                 new Date(a.start_date).getHours() -
                 new Date(b.start_date).getHours()
             )
-          );
+            .filter(
+              (lesson, index, self) =>
+                index ===
+                self.findIndex(
+                  (obj) =>
+                    obj.start_date?.toString() ===
+                      lesson.start_date?.toString() &&
+                    obj.end_date?.toString() === lesson.end_date?.toString()
+                )
+            );
+
+          res.send(filtered);
         } else next(logErr(errors));
       })
       .catch((err) => {
@@ -120,7 +134,7 @@ router.get("/schedule/lessons", (req, res, next) => {
   }
 });
 
-router.get("/schedule/favourite", (req, res, next) => {
+router.get("/schedule/favourite", function (req, res, next) {
   const errors = validationResult(req);
   const {
     params: { vk_user_id: id },
@@ -139,8 +153,12 @@ router.get("/schedule/favourite", (req, res, next) => {
   }
 });
 
-router.get("/schedule/groups", (req, res, next) => {
+router.get("/schedule/groups", function (req, res, next) {
   const errors = validationResult(req);
+  const {
+    params: { vk_user_id: id },
+    stgroup,
+  } = req.body;
 
   if (!errors.isEmpty()) {
     next(logErr(errors, 400));
@@ -157,7 +175,7 @@ router.get("/schedule/groups", (req, res, next) => {
   }
 });
 
-router.get("/schedule/stgroup", (req, res, next) => {
+router.get("/schedule/stgroup", function (req, res, next) {
   const errors = validationResult(req);
   const { stgroup } = req.query;
 
@@ -167,7 +185,12 @@ router.get("/schedule/stgroup", (req, res, next) => {
     db.getStgroup(stgroup)
       .then((stgroup) => {
         if (stgroup) {
-          res.send(stgroup);
+          res.send(
+            stgroup.filter(
+              (group, index, self) =>
+                index === self.findIndex((obj) => obj.name === group.name)
+            )
+          );
         } else next(logErr(errors));
       })
       .catch((err) => {
@@ -176,7 +199,7 @@ router.get("/schedule/stgroup", (req, res, next) => {
   }
 });
 
-router.get("/schedule/file", (req, res, next) => {
+router.get("/schedule/file", function (req, res, next) {
   const errors = validationResult(req);
   const { stgroup } = req.query;
 

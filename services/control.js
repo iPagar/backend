@@ -10,9 +10,9 @@ const bot = new VkBot({
 });
 
 // running a task every hour
-// cron.schedule("0 * * * *", () => {
-//   update();
-// });
+cron.schedule("0 * * * *", () => {
+  update();
+});
 
 async function checkAllowedMessages(students) {
   for (const i in students) {

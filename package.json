@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "commonjs",
   "engines": {
-    "node": ">=8.10.0"
+    "node": ">=16.0.0"
   },
   "scripts": {
     "start": "cross-env ENV=production nest start",
@@ -37,9 +37,9 @@
     "express-winston": "^4.1.0",
     "helmet": "^3.23.3",
     "http-errors": "^1.8.0",
-    "manager-schedule": "git+https://github.com/iPagar/manager-schedule.git",
     "manager-teachers": "github:iPagar/manager-teachers",
     "mongodb": "^5.2.0",
+    "moodle-client": "^0.5.2",
     "morgan": "^1.10.0",
     "morgan-body": "^2.6.5",
     "mysql2": "^3.6.1",
@@ -47,8 +47,10 @@
     "node-vk-bot-api": "^3.3.4",
     "pg": "^8.5.1",
     "puppeteer": "^21.2.1",
+    "rector-schedule-parser": "^2.1.1",
     "reflect-metadata": "^0.1.13",
     "request-promise": "^4.2.6",
+    "rimraf": "^5.0.5",
     "rxjs": "^7.8.1",
     "text-table": "^0.2.0",
     "typeorm": "^0.3.17",
