@@ -91,8 +91,6 @@ export async function getTeachersFromWebsite(): Promise<Teacher[]> {
       throw new Error("Invalid teachers data");
     }
 
-    // return teachersMock;
-
     return parsedTeachers;
   } catch (error) {
     console.error(error);

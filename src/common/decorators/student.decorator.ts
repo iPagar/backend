@@ -1,5 +1,12 @@
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import {
+  applyDecorators,
+  createParamDecorator,
+  ExecutionContext,
+  UseGuards,
+} from "@nestjs/common";
 import { StudentEntity } from "../../entities/student.entity";
+import { StudentGuard } from "../guards/student.guard";
+import { ApiBearerAuth, ApiHeader } from "@nestjs/swagger";
 
 export const StudentParam = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
@@ -7,3 +14,10 @@ export const StudentParam = createParamDecorator(
     return request.student as StudentEntity;
   }
 );
+
+export function UseStudent() {
+  return applyDecorators(
+    UseGuards(StudentGuard),
+    ApiBearerAuth("Authorization")
+  );
+}

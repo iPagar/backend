@@ -15,6 +15,14 @@ async function bootstrap() {
     .setTitle("Stankin.Moduli API")
     .setDescription("The Stankin.Moduli API description")
     .setVersion("1.0")
+    .addBearerAuth(
+      {
+        type: "apiKey",
+        in: "header",
+        name: "x-sign-header",
+      },
+      "Authorization"
+    )
     .build();
   const document = SwaggerModule.createDocument(nestApp, config);
   SwaggerModule.setup("api/docs", nestApp, document);
