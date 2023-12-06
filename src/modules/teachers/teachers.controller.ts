@@ -34,10 +34,14 @@ import {
   PutCommentDto,
 } from "./dto/comment.dto";
 import { TeacherDto } from "./dto/teacher.dto";
+import {
+  PaginationResponseDto,
+  paginationResponse,
+} from "../../common/helpers/pagination.helper";
 
 @Controller("teachers")
 @ApiTags("Teachers")
-@ApiExtraModels(PublicCommentDto, PrivateCommentDto)
+@ApiExtraModels(PublicCommentDto, PrivateCommentDto, TeacherDto)
 export class TeachersController {
   constructor(private prismaService: PrismaService) {}
 
@@ -334,13 +338,13 @@ export class TeachersController {
   })
   @ApiOkResponse({
     description: "List of teachers",
-    type: [TeacherDto],
+    schema: paginationResponse(TeacherDto),
   })
   async getTeachers(
     @Query() paginationDto: PaginationDto,
     @Query("name") name?: string,
     @StudentParam() student?: StudentEntity
-  ): Promise<TeacherDto[]> {
+  ): Promise<PaginationResponseDto<TeacherDto>> {
     const { page, limit } = paginationDto;
     const teachers = await this.prismaService.$transaction(
       async (tx) => {
@@ -458,7 +462,7 @@ export class TeachersController {
           };
         });
 
-        return richByComments;
+        return { data: richByComments, total: teachers.length };
       },
       {
         timeout: 50000,
@@ -466,7 +470,7 @@ export class TeachersController {
     );
 
     const richByDetails = await Promise.all(
-      teachers.map(async (teacher) => {
+      teachers.data.map(async (teacher) => {
         const details = await getTeacherDetail(teacher.name);
 
         return {
@@ -476,7 +480,10 @@ export class TeachersController {
       })
     );
 
-    return richByDetails;
+    return {
+      data: richByDetails,
+      total: teachers.total,
+    };
   }
 
   // every week
