@@ -23,14 +23,16 @@ function update(courseExp, folderExp) {
       let lessons = [];
       const pdfs = [];
 
-      await Promise.all(promises).then((schedules) =>
-        schedules.map((schedule) => {
-          const { filename, file, parsed } = schedule;
-
-          lessons = lessons.concat(parsed);
-          pdfs.push({ name: filename, file });
-        })
-      );
+      await Promise.allSettled(promises).then((results) => {
+        results.forEach((result) => {
+          if (result.status === "fulfilled") {
+            lessons = lessons.concat(result.value.lessons);
+            pdfs.push(...result.value.pdfs);
+          } else {
+            console.log(result.reason);
+          }
+        });
+      });
 
       return { pdfs, lessons };
     })
