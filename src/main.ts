@@ -23,6 +23,14 @@ async function bootstrap() {
       },
       "Authorization"
     )
+    .addBearerAuth(
+      {
+        type: "apiKey",
+        in: "header",
+        name: "authorization",
+      },
+      "Authorization-Admin"
+    )
     .build();
   const document = SwaggerModule.createDocument(nestApp, config);
   SwaggerModule.setup("api/docs", nestApp, document);

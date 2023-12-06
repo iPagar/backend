@@ -2,6 +2,9 @@
 FROM node:16-alpine
 
 RUN apk add --no-cache bash
+# Обновление индекса пакетов и установка mongodb-tools
+RUN apk update && \
+    apk add --no-cache mongodb-tools
 
 # Создаем директорию приложения внутри образа
 WORKDIR /app

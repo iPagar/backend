@@ -8,6 +8,7 @@ import { AppController } from "./app.controller";
 import { PrismaService } from "./prisma.service";
 import { TeachersModule } from "./modules/teachers/teachers.module";
 import { ScheduleModule } from "@nestjs/schedule";
+import { BackupService } from "../services/backup-mongo";
 dotenv.config();
 
 @Module({
@@ -22,7 +23,7 @@ dotenv.config();
     MarksModule,
     TeachersModule,
   ],
-  providers: [PrismaService],
+  providers: [PrismaService, BackupService],
   controllers: [AppController],
 })
 export class AppModule {
