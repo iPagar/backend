@@ -1,16 +1,12 @@
 import { applyDecorators } from "@nestjs/common";
-import { ApiProperty, ApiQuery } from "@nestjs/swagger";
-import { IsOptional, IsNumber, Min } from "class-validator";
+import { ApiQuery } from "@nestjs/swagger";
+import { IsOptional } from "class-validator";
 
 export class PaginationDto {
   @IsOptional()
-  @IsNumber()
-  @Min(1)
   page = 1;
 
   @IsOptional()
-  @IsNumber()
-  @Min(1)
   limit = 10;
 }
 

@@ -22,20 +22,22 @@ router.post("/student", (req, res, next) => {
       )
     );
   } else {
-    q.addVkStats(
-      params.vk_user_id,
-      params.vk_platform,
-      params.vk_ref,
-      params.vk_is_favorite
-    );
-    db.getStudent(params.vk_user_id)
-      .then((student) => {
-        if (student) res.send(student);
-        else next(createError(createError(404)));
-      })
-      .catch((err) => {
-        next(createError(err));
-      });
+    if (params.vk_platform && params.vk_ref && params.vk_is_favorite) {
+      q.addVkStats(
+        params.vk_user_id,
+        params.vk_platform,
+        params.vk_ref,
+        params.vk_is_favorite
+      );
+      db.getStudent(params.vk_user_id)
+        .then((student) => {
+          if (student) res.send(student);
+          else next(createError(createError(404)));
+        })
+        .catch((err) => {
+          next(createError(err));
+        });
+    }
   }
 });
 

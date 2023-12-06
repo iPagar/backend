@@ -10,6 +10,8 @@ import {
 } from "@nestjs/common";
 import {
   ApiExtraModels,
+  ApiOkResponse,
+  ApiQuery,
   ApiResponse,
   ApiTags,
   getSchemaPath,
@@ -39,13 +41,17 @@ import { TeacherDto } from "./dto/teacher.dto";
 export class TeachersController {
   constructor(private prismaService: PrismaService) {}
 
-  @Put("reactions")
+  @Put(":teacherId/reactions")
   @UseStudent()
+  @ApiOkResponse({
+    description: "Reaction was successfully updated",
+  })
   async putReaction(
     @StudentParam() student: StudentEntity,
-    @Body() body: PutReactionDto
+    @Body() body: PutReactionDto,
+    @Param("teacherId") teacherId: string
   ) {
-    const { teacherId, reaction } = body;
+    const { reaction } = body;
 
     const foundTeacher = await this.prismaService.teachers.findUnique({
       where: {
@@ -101,7 +107,10 @@ export class TeachersController {
     }
   }
 
-  @Delete("reactions/:teacherId")
+  @Delete(":teacherId/reactions")
+  @ApiOkResponse({
+    description: "Reaction was successfully deleted",
+  })
   @UseStudent()
   async deleteReaction(
     @StudentParam() student: StudentEntity,
@@ -143,23 +152,27 @@ export class TeachersController {
   }
 
   @Get(":teacherId/comments")
-  @UseStudent()
-  @ApiResponse({
+  @UseStudent({
+    required: false,
+  })
+  @ApiOkResponse({
+    description: "List of comments",
     schema: {
-      anyOf: [
-        {
-          $ref: getSchemaPath(PublicCommentDto),
-        },
-        {
-          $ref: getSchemaPath(PrivateCommentDto),
-        },
-      ],
+      items: {
+        oneOf: [
+          {
+            $ref: getSchemaPath(PublicCommentDto),
+          },
+          {
+            $ref: getSchemaPath(PrivateCommentDto),
+          },
+        ],
+      },
     },
-    isArray: true,
   })
   async getComments(
-    @StudentParam() student: StudentEntity,
-    @Param("teacherId") teacherId: string
+    @Param("teacherId") teacherId: string,
+    @StudentParam() student?: StudentEntity
   ): Promise<(PublicCommentDto | PrivateCommentDto)[]> {
     const foundTeacher = await this.prismaService.teachers.findUnique({
       where: {
@@ -184,7 +197,7 @@ export class TeachersController {
 
     const richByMy = comments.map((comment) => ({
       ...comment,
-      my: comment.students.id === student.id,
+      my: student ? comment.students.id === student.id : false,
     }));
     const formatted = richByMy.map((comment) => {
       if (comment.is_public) {
@@ -193,12 +206,14 @@ export class TeachersController {
           vkId: comment.id,
           my: comment.my,
           type: "public",
+          createdAt: comment.created_at,
         } satisfies PublicCommentDto;
       } else {
         return {
           comment: comment.comment,
           my: comment.my,
           type: "private",
+          createdAt: comment.created_at,
         } satisfies PrivateCommentDto;
       }
     });
@@ -208,6 +223,9 @@ export class TeachersController {
 
   @Put(":teacherId/comments")
   @UseStudent()
+  @ApiOkResponse({
+    description: "Comment was successfully updated",
+  })
   async putComment(
     @StudentParam() student: StudentEntity,
     @Param("teacherId") teacherId: string,
@@ -261,6 +279,9 @@ export class TeachersController {
 
   @Delete(":teacherId/comments")
   @UseStudent()
+  @ApiOkResponse({
+    description: "Comment was successfully deleted",
+  })
   async deleteComment(
     @StudentParam() student: StudentEntity,
     @Param("teacherId") teacherId: string
@@ -301,120 +322,148 @@ export class TeachersController {
   }
 
   @Get()
-  @UseStudent()
+  @UseStudent({
+    required: false,
+  })
   @ApiPaginationQuery()
-  @ApiResponse({
+  @ApiQuery({
+    name: "name",
+    type: String,
+    required: false,
+    description: "Teacher name",
+  })
+  @ApiOkResponse({
+    description: "List of teachers",
     type: [TeacherDto],
   })
   async getTeachers(
-    @StudentParam() student: StudentEntity,
-    @Query() paginationDto: PaginationDto
-  ) {
+    @Query() paginationDto: PaginationDto,
+    @Query("name") name?: string,
+    @StudentParam() student?: StudentEntity
+  ): Promise<TeacherDto[]> {
     const { page, limit } = paginationDto;
-    const teachers = await this.prismaService.$transaction(async (tx) => {
-      const teachers = await tx.teachers.findMany({
-        where: {
-          status: "active",
-        },
-      });
-      const reactions = await tx.teachers_reactions.findMany({
-        where: {
-          teachers: {
-            id: {
-              in: teachers.map((teacher) => teacher.id),
+    const teachers = await this.prismaService.$transaction(
+      async (tx) => {
+        const teachers = await tx.teachers.findMany({
+          where: {
+            status: "active",
+            name: {
+              contains: name,
+              mode: "insensitive",
             },
           },
-        },
-        include: {
-          teachers: true,
-          students: true,
-        },
-      });
-      const comments = await tx.teachers_comments.findMany({
-        where: {
-          teachers: {
-            id: {
-              in: teachers.map((teacher) => teacher.id),
+        });
+        const reactions = await tx.teachers_reactions.findMany({
+          where: {
+            teachers: {
+              id: {
+                in: teachers.map((teacher) => teacher.id),
+              },
             },
           },
-        },
-        include: {
-          teachers: true,
-          students: true,
-        },
-      });
-      const richByReactions = teachers.map((teacher) => {
-        const teacherReactions = reactions.filter(
-          (reaction) => reaction.teachers.id === teacher.id
-        );
-        const richByReactions = teacherReactions.reduce(
-          (
-            acc: {
-              count: number;
-              data: {
-                [key: string]: number;
+          include: {
+            teachers: true,
+            students: true,
+          },
+        });
+        const comments = await tx.teachers_comments.findMany({
+          where: {
+            teachers: {
+              id: {
+                in: teachers.map((teacher) => teacher.id),
+              },
+            },
+          },
+          include: {
+            teachers: true,
+            students: true,
+          },
+        });
+        const richByReactions = teachers.map((teacher) => {
+          const teacherReactions = reactions.filter(
+            (reaction) => reaction.teachers.id === teacher.id
+          );
+          const richByReactions = teacherReactions.reduce(
+            (
+              acc: {
+                count: number;
+                data: {
+                  [key: string]: number;
+                };
+              },
+              reaction
+            ) => {
+              const reactionName = reaction.reaction;
+
+              return {
+                ...acc,
+                data: {
+                  ...acc.data,
+                  [reaction.reaction]:
+                    reactionName in acc.data ? acc.data[reactionName] + 1 : 1,
+                },
+                count: acc.count + 1,
+                my: student
+                  ? reaction.students.id === student.id
+                    ? reactionName
+                    : null
+                  : null,
               };
             },
-            reaction
-          ) => {
-            const reactionName = reaction.reaction;
+            {
+              count: 0,
+              data: {},
+              my: null,
+            }
+          );
+          return {
+            ...teacher,
+            reactions: richByReactions,
+          };
+        });
+        const sortedByReactions = richByReactions
+          .sort((a, b) => b.reactions.count - a.reactions.count)
+          .slice((page - 1) * limit, page * limit);
 
-            return {
-              ...acc,
-              data: {
-                ...acc.data,
-                [reaction.reaction]:
-                  reactionName in acc.data ? acc.data[reactionName] + 1 : 1,
+        const richByComments = sortedByReactions.map((teacher) => {
+          const teacherComments = comments.filter(
+            (comment) => comment.teachers.id === teacher.id
+          );
+          const richByComments = teacherComments.reduce(
+            (
+              acc: {
+                count: number;
+                my: boolean;
               },
-              count: acc.count + 1,
-              my: reaction.students.id === student.id ? reactionName : null,
-            };
-          },
-          {
-            count: 0,
-            data: {},
-          }
-        );
-        return {
-          ...teacher,
-          reactions: richByReactions,
-        };
-      });
-      const sortedByReactions = richByReactions
-        .sort((a, b) => b.reactions.count - a.reactions.count)
-        .slice((page - 1) * limit, page * limit);
-
-      const richByComments = sortedByReactions.map((teacher) => {
-        const teacherComments = comments.filter(
-          (comment) => comment.teachers.id === teacher.id
-        );
-        const richByComments = teacherComments.reduce(
-          (
-            acc: {
-              count: number;
-              my: boolean;
+              comment
+            ) => {
+              return {
+                ...acc,
+                count: acc.count + 1,
+                my: student
+                  ? comment.students.id === student.id
+                    ? true
+                    : false
+                  : false,
+              };
             },
-            comment
-          ) => {
-            return {
-              ...acc,
-              count: acc.count + 1,
-              my: comment.students.id === student.id ? true : false,
-            };
-          },
-          {
-            count: 0,
-            my: false,
-          }
-        );
-        return {
-          ...teacher,
-          comments: richByComments,
-        };
-      });
+            {
+              count: 0,
+              my: false,
+            }
+          );
+          return {
+            ...teacher,
+            comments: richByComments,
+          };
+        });
 
-      return richByComments;
-    });
+        return richByComments;
+      },
+      {
+        timeout: 50000,
+      }
+    );
 
     const richByDetails = await Promise.all(
       teachers.map(async (teacher) => {

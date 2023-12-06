@@ -19,7 +19,7 @@ class ReactionsDto {
   @IsObject()
   data: Record<string, number>;
 
-  @ApiProperty({ required: false, type: Number })
+  @ApiProperty({ type: Number, nullable: true })
   @IsOptional()
   my: number | null;
 }
@@ -35,8 +35,10 @@ class CommentsDto {
 }
 
 export class TeacherDto {
-  @ApiProperty()
   @IsUUID()
+  @ApiProperty({
+    format: "uuid",
+  })
   id: string;
 
   @ApiProperty()
@@ -53,11 +55,11 @@ export class TeacherDto {
 
   @ApiProperty()
   @IsDateString()
-  updatedAt: string;
+  updatedAt: Date;
 
   @ApiProperty()
   @IsDateString()
-  createdAt: string;
+  createdAt: Date;
 
   @ApiProperty()
   @IsString()
@@ -77,5 +79,5 @@ export class TeacherDto {
 
   @ApiProperty()
   @IsObject()
-  details: Record<string, number>;
+  details: Record<string, string | number | undefined>;
 }

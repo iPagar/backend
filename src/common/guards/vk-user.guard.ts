@@ -23,11 +23,11 @@ export class VkUserGuard implements CanActivate {
   }
 }
 
-export function extractVkUserFromHeader(request: Request) {
+export function extractVkUserFromHeader(request: Request): VkUser | null {
   const xSignHeader = request.headers[`x-sign-header`]?.slice(1);
 
   if (typeof xSignHeader !== "string") {
-    throw new UnauthorizedException();
+    return null;
   }
 
   if (
@@ -35,7 +35,7 @@ export function extractVkUserFromHeader(request: Request) {
     !process.env.VK_SECURE_SCHEDULE ||
     !process.env.VK_OL
   ) {
-    throw new UnauthorizedException();
+    return null;
   }
 
   try {
@@ -48,7 +48,7 @@ export function extractVkUserFromHeader(request: Request) {
     return vk;
   } catch {
     if (!process.env.TEST_SIGN) {
-      throw new UnauthorizedException();
+      return null;
     }
 
     return checkTestSign(xSignHeader, process.env.TEST_SIGN);
@@ -71,7 +71,7 @@ export const VkTestUser = z.object({
   sign: z.string(),
 });
 
-function checkTestSign(query: string, secretKey: string): VkUser {
+function checkTestSign(query: string, secretKey: string): VkUser | null {
   const splittedQuery = query
     .split("&")
     .map((param) => param.split("="))
@@ -80,10 +80,10 @@ function checkTestSign(query: string, secretKey: string): VkUser {
   const parsedQuery = VkTestUser.safeParse(splittedQuery);
 
   if (!parsedQuery.success) {
-    throw new UnauthorizedException();
+    return null;
   }
 
-  if (parsedQuery.data.sign === process.env.TEST_SIGN) {
+  if (parsedQuery.data.sign === secretKey) {
     return {
       vk_user_id: parsedQuery.data.id,
       vk_app_id: "1",
@@ -92,12 +92,15 @@ function checkTestSign(query: string, secretKey: string): VkUser {
       vk_language: "ru",
       vk_access_token_settings: "notify",
     };
-  } else {
-    throw new UnauthorizedException();
   }
+
+  return null;
 }
 
-function checkVkSign(query: string, secretKey: string | string[]): VkUser {
+function checkVkSign(
+  query: string,
+  secretKey: string | string[]
+): VkUser | null {
   const urlParams = qs.parse(query);
   const ordered: Record<string, string> = {};
   Object.keys(urlParams)
@@ -131,7 +134,7 @@ function checkVkSign(query: string, secretKey: string | string[]): VkUser {
     const parsedSchema = VkUserSchema.safeParse(urlParams);
 
     if (!parsedSchema.success) {
-      throw new UnauthorizedException();
+      return null;
     }
 
     return parsedSchema.data;
@@ -147,13 +150,13 @@ function checkVkSign(query: string, secretKey: string | string[]): VkUser {
     .replace(/=$/, "");
 
   if (paramsHash !== urlParams.sign) {
-    throw new UnauthorizedException();
+    return null;
   }
 
   const parsedSchema = VkUserSchema.safeParse(urlParams);
 
   if (!parsedSchema.success) {
-    throw new UnauthorizedException();
+    return null;
   }
 
   return parsedSchema.data;

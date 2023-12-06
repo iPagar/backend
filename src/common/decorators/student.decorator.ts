@@ -2,6 +2,7 @@ import {
   applyDecorators,
   createParamDecorator,
   ExecutionContext,
+  SetMetadata,
   UseGuards,
 } from "@nestjs/common";
 import { StudentEntity } from "../../entities/student.entity";
@@ -15,8 +16,13 @@ export const StudentParam = createParamDecorator(
   }
 );
 
-export function UseStudent() {
+export function UseStudent(
+  props = {
+    required: true,
+  }
+) {
   return applyDecorators(
+    SetMetadata("isStudentRequired", props.required),
     UseGuards(StudentGuard),
     ApiBearerAuth("Authorization")
   );

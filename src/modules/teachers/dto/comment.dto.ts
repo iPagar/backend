@@ -11,9 +11,15 @@ export class CommonCommentDto {
 
   @ApiProperty()
   my: boolean;
+
+  @ApiProperty()
+  createdAt: Date;
 }
 
 export class PublicCommentDto extends CommonCommentDto {
+  @ApiProperty({
+    enum: ["public"],
+  })
   type = "public" as const;
 
   @ApiProperty()
@@ -21,6 +27,9 @@ export class PublicCommentDto extends CommonCommentDto {
 }
 
 export class PrivateCommentDto extends CommonCommentDto {
+  @ApiProperty({
+    enum: ["private"],
+  })
   type = "private" as const;
 }
 

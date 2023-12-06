@@ -21,7 +21,9 @@ app.use(
   express.urlencoded({ limit: "1mb", parameterLimit: 500, extended: true })
 );
 app.use(cors());
-app.use(winston);
+if (process.env.NODE_ENV === "production") {
+  app.use(winston);
+}
 app.disable("x-powered-by");
 
 // check sign
