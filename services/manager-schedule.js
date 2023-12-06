@@ -26,8 +26,10 @@ function update(courseExp, folderExp) {
       await Promise.allSettled(promises).then((results) => {
         results.forEach((result) => {
           if (result.status === "fulfilled") {
-            lessons = lessons.concat(result.value.lessons);
-            pdfs.push(...result.value.pdfs);
+            const { filename, file, parsed } = result.value;
+
+            lessons = lessons.concat(parsed);
+            pdfs.push({ name: filename, file });
           } else {
             console.log(result.reason);
           }
