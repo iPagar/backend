@@ -109,9 +109,9 @@ async function updateStudent(semester, stud, isLast) {
     // update rating
     await updateRatings(id, semester);
 
-    if (updatedMarks.length) console.log(student, updatedMarks);
+    if (updatedMarks && updatedMarks.length) console.log(student, updatedMarks);
 
-    if (updatedMarks.length > 0 && notify) {
+    if (updatedMarks && updatedMarks.length > 0 && notify) {
       const notifyText = await makeNotifyText(
         id,
         updatedMarks,
