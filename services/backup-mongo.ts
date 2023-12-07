@@ -45,6 +45,8 @@ export class BackupService {
       });
       mongodump.stderr.on("data", (data) => {
         console.error(`stderr: ${data}`);
+
+        isBackupInProgress = false;
       });
 
       mongodump.on("close", async (code) => {
@@ -58,13 +60,14 @@ export class BackupService {
           fs.unlinkSync(`${pathBackup}/mongoBackup.archive`);
 
           console.log("Резервное копирование успешно выполнено");
-
-          isBackupInProgress = false;
         } else {
           console.error(`Backup error`);
         }
+
+        isBackupInProgress = false;
       });
     } catch (error) {
+      isBackupInProgress = false;
       console.error("Ошибка во время резервного копирования:", error);
     }
   }

@@ -17,6 +17,10 @@ export class VkUserGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const vkUser = extractVkUserFromHeader(request);
 
+    if (!vkUser) {
+      throw new UnauthorizedException();
+    }
+
     request["vkUser"] = vkUser;
 
     return true;
@@ -38,21 +42,21 @@ export function extractVkUserFromHeader(request: Request): VkUser | null {
     return null;
   }
 
-  try {
-    const vk = checkVkSign(xSignHeader, [
-      process.env.VK_SECURE_MODULI,
-      process.env.VK_SECURE_SCHEDULE,
-      process.env.VK_OL,
-    ]);
+  const vk = checkVkSign(xSignHeader, [
+    process.env.VK_SECURE_MODULI,
+    process.env.VK_SECURE_SCHEDULE,
+    process.env.VK_OL,
+  ]);
 
-    return vk;
-  } catch {
+  if (!vk) {
     if (!process.env.TEST_SIGN) {
       return null;
     }
 
     return checkTestSign(xSignHeader, process.env.TEST_SIGN);
   }
+
+  return vk;
 }
 
 export const VkUserSchema = z.object({
@@ -128,7 +132,7 @@ function checkVkSign(
       .find((hash) => hash === urlParams.sign);
 
     if (!paramsHash) {
-      throw new UnauthorizedException();
+      return null;
     }
 
     const parsedSchema = VkUserSchema.safeParse(urlParams);

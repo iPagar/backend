@@ -2,7 +2,10 @@ import { Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { MarkEntity } from "../../entities/mark.entity";
 import { StudentGuard } from "../../common/guards/student.guard";
-import { StudentParam } from "../../common/decorators/student.decorator";
+import {
+  StudentParam,
+  UseStudent,
+} from "../../common/decorators/student.decorator";
 import { StudentEntity } from "../../entities/student.entity";
 import { PrismaService } from "../../prisma.service";
 
@@ -42,7 +45,7 @@ export class MarksController {
   }
 
   @Get(":semester")
-  @UseGuards(StudentGuard)
+  @UseStudent()
   @ApiOkResponse({
     description: "Returns marks for student for given semester",
     type: [MarkEntity],

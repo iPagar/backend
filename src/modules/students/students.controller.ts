@@ -20,7 +20,10 @@ import {
 } from "@nestjs/swagger";
 import { StudentDto, StudentRatingDto } from "./dto/get-student.dto";
 import { VkUserGuard, VkUser } from "../../common/guards/vk-user.guard";
-import { VkUserParam } from "../../common/decorators/vk-user.decorator";
+import {
+  UseVkUser,
+  VkUserParam,
+} from "../../common/decorators/vk-user.decorator";
 import { LoginDto } from "./dto/login.dto";
 import {
   LkMark,
@@ -62,7 +65,7 @@ export class StudentsController {
     description: "Student retrieved successfully",
     type: StudentDto,
   })
-  @UseGuards(VkUserGuard)
+  @UseVkUser()
   async getMe(@VkUserParam() vkUser: VkUser) {
     const foundStudent = await this.prisma.students.findUnique({
       where: {
@@ -208,15 +211,30 @@ export class StudentsController {
     type: LoginDto,
   })
   @ApiOkResponse({ description: "Student logged in successfully" })
-  @UseGuards(VkUserGuard)
+  @UseVkUser()
   async login(@VkUserParam() vkUser: VkUser, @Body() loginDto: LoginDto) {
-    try {
-      const lkStudent = await getStudent(
-        Number(loginDto.studentId),
-        loginDto.password
-      );
-      const { surname, initials, stgroup } = lkStudent;
+    const lkStudent = await getStudent(
+      Number(loginDto.studentId),
+      loginDto.password
+    );
+    const { surname, initials, stgroup } = lkStudent;
 
+    const foundStudent = await this.prisma.students.findUnique({
+      where: {
+        student: Number(loginDto.studentId),
+      },
+    });
+
+    if (foundStudent) {
+      await this.prisma.students.update({
+        where: {
+          student: Number(loginDto.studentId),
+        },
+        data: {
+          id: Number(vkUser.vk_user_id),
+        },
+      });
+    } else {
       const semesters = await getSemesters(
         Number(loginDto.studentId),
         loginDto.password
@@ -306,16 +324,16 @@ export class StudentsController {
           }
         }
 
-        return createdStudent;
+        const { password, ...rest } = createdStudent;
+
+        return rest;
       });
-    } catch (error) {
-      console.log(error);
     }
   }
 
   @Post("logout")
   @ApiOkResponse({ description: "Student logged out successfully" })
-  @UseGuards(VkUserGuard)
+  @UseVkUser()
   async logout(@VkUserParam() vkUser: VkUser, @Res() res: Response) {
     await this.prisma.students.delete({
       where: {
