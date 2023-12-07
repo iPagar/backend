@@ -18,7 +18,11 @@ import {
   ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
-import { StudentDto, StudentRatingDto } from "./dto/get-student.dto";
+import {
+  PersonalStudentRatingDto,
+  StudentDto,
+  StudentRatingDto,
+} from "./dto/get-student.dto";
 import { VkUserGuard, VkUser } from "../../common/guards/vk-user.guard";
 import {
   UseVkUser,
@@ -34,7 +38,10 @@ import {
 import { Response } from "express";
 import { DisabledGuard } from "../../common/guards/disabled.guard";
 import { StudentGuard } from "../../common/guards/student.guard";
-import { StudentParam } from "../../common/decorators/student.decorator";
+import {
+  StudentParam,
+  UseStudent,
+} from "../../common/decorators/student.decorator";
 import { PrismaService } from "../../prisma.service";
 import { getFilteredMarks, getRating } from "../../common/marks.helpers";
 import { students } from "@prisma/client";
@@ -149,6 +156,80 @@ export class StudentsController {
     };
   }
 
+  @Get("me/rating")
+  @ApiOkResponse({
+    description: "Student's rating retrieved successfully",
+    type: PersonalStudentRatingDto,
+  })
+  @ApiQuery({
+    name: "semester",
+    description: "Semester to filter by",
+  })
+  @UseStudent()
+  async getMeRating(
+    @StudentParam() student: StudentDto,
+    @Query("semester") semester: string
+  ): Promise<PersonalStudentRatingDto> {
+    const rating = (await db.getStudentRatingAndNumberInTheListBySemester(
+      student.id,
+      semester
+    )) as null | {
+      rating: number;
+      number: string;
+    };
+
+    const richByVk = await vk.api.users.get({
+      user_ids: [student.id],
+      fields: ["photo_200"],
+    });
+
+    return {
+      number: rating ? Number(rating.number) : null,
+      photo: richByVk[0].photo_200,
+    };
+  }
+
+  @Get("ratingst")
+  @ApiQuery({
+    name: "semester",
+    description: "Semester to filter by",
+    required: false,
+  })
+  @ApiOkResponse({
+    description: "Students retrieved successfully",
+    type: [StudentRatingDto],
+  })
+  @UseStudent()
+  async getRatingst(
+    @StudentParam() student: StudentDto,
+    @Query("semester") semester: string
+  ): Promise<StudentRatingDto[]> {
+    const rating = (await db.getRatingStgroup(student.stgroup, semester)) as {
+      number: string;
+      id: number;
+      rating: number;
+    }[];
+
+    const vkUsers = await vk.api.users.get({
+      user_ids: rating.map((student) => student.id),
+      fields: ["photo_200"],
+    });
+
+    const richStudents = rating.map((student) => {
+      const vkUser = vkUsers.find((vkUser) => vkUser.id === Number(student.id));
+
+      return {
+        ...student,
+        photo: vkUser?.photo_200,
+        firstName: vkUser?.first_name,
+        lastName: vkUser?.last_name,
+        stgroup: student.number,
+      };
+    });
+
+    return richStudents;
+  }
+
   @Get("rating")
   @ApiPaginationQuery()
   @ApiQuery({
@@ -171,12 +252,11 @@ export class StudentsController {
     @Query("search") search = ""
   ): Promise<PaginationResponseDto<StudentRatingDto>> {
     const { page, limit } = paginationDto;
-    const offset = (page - 1) * limit;
 
-    const rating = (await db.getRating(semester, search, offset)) as {
+    const rating = (await db.getRating(semester, search, page, limit)) as {
       data: {
         number: string;
-        id: string;
+        id: number;
         stgroup: string;
         rating: number;
       }[];

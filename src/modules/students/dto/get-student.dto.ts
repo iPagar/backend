@@ -1,5 +1,4 @@
-import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { StudentEntity } from "../../../entities/student.entity";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class StudentDto {
   @ApiProperty({
@@ -49,25 +48,54 @@ export class StudentDto {
   is_deleted: boolean;
 }
 
+export class PersonalStudentRatingDto {
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
+  number: number | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
+  photo: string | null;
+}
+
 export class StudentRatingDto {
   @ApiProperty()
   number: string;
 
   @ApiProperty()
-  id: string;
+  id: number;
 
-  @ApiProperty()
-  stgroup: string;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
+  stgroup: string | null;
 
-  @ApiProperty()
-  rating: number;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
+  rating: number | null;
 
-  @ApiProperty()
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
   photo: string | null;
 
-  @ApiProperty()
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
   firstName: string | null;
 
-  @ApiProperty()
+  @ApiProperty({
+    type: String,
+    nullable: true,
+  })
   lastName: string | null;
 }

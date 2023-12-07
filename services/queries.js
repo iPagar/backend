@@ -185,7 +185,33 @@ function getMarks(id, semester) {
   );
 }
 
-function getRating(semester, search, offset) {
+function getStudentRatingAndNumberInTheListBySemester(id, semester) {
+  return new Promise((resolve, reject) =>
+    pool.query(
+      `with allratings as (
+        select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, ratings.rating, ratings.semester 
+        from students 
+        inner join ratings on ratings.id = students.id 
+        where students.is_deleted != TRUE 
+          and semester = ($2) 
+          and stgroup not like CONCAT('%', 'Тест','%') 
+      )
+      select distinct number, id, stgroup, rating
+      from allratings
+      where id = ($1)
+      order by number asc`,
+      [id, semester],
+      (error, results) => {
+        if (error) {
+          return reject(error);
+        }
+        return resolve(results.rows[0]);
+      }
+    )
+  );
+}
+
+function getRating(semester, search, page, limit) {
   return new Promise((resolve, reject) => {
     const queryData = `with allratings as (
         select ROW_number() over (order by ratings.rating desc) as number,
@@ -203,7 +229,8 @@ function getRating(semester, search, offset) {
          or lower(stgroup) like CONCAT('%', trim(lower($2)),'%') 
          or CAST(id AS TEXT) LIKE CAST($2 AS TEXT) 
       order by number asc 
-      limit 10 offset $3 * 10`;
+      LIMIT $4 OFFSET ($3 - 1) * $4
+      `;
 
     const queryCount = `with allratings as (
         select students.id, students.stgroup, ratings.rating, ratings.semester, students.surname
@@ -221,7 +248,7 @@ function getRating(semester, search, offset) {
 
     // Выполняем оба запроса параллельно
     Promise.all([
-      pool.query(queryData, [semester, search, offset]),
+      pool.query(queryData, [semester, search, page, limit]),
       pool.query(queryCount, [semester, search]),
     ])
       .then(([dataResult, countResult]) => {
@@ -232,21 +259,6 @@ function getRating(semester, search, offset) {
       .catch((error) => reject(error));
   });
 }
-
-// function getRating(semester, search, offset) {
-//   return new Promise((resolve, reject) =>
-//     pool.query(
-//       `with allratings as (select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, ratings.rating, ratings.semester from students inner join ratings on ratings.id = students.id where students.is_deleted != TRUE and semester = ($1) AND stgroup not like CONCAT('%', 'Тест','%') ) select distinct number, id, stgroup, rating from allratings where lower(surname) like CONCAT('%', trim(lower($2)),'%') OR lower(stgroup) like CONCAT('%', trim(lower($2)),'%') OR CAST(id AS TEXT) LIKE CAST(($2) AS TEXT) order by number asc limit 10 offset ($3) * 10`,
-//       [semester, search, offset],
-//       (error, results) => {
-//         if (error) {
-//           return reject(error);
-//         }
-//         return resolve(results.rows);
-//       }
-//     )
-//   );
-// }
 
 function getAllRating(semester) {
   return new Promise((resolve, reject) =>
@@ -586,4 +598,5 @@ module.exports = {
   addMe,
   getSchoolarship,
   getMarksHistory,
+  getStudentRatingAndNumberInTheListBySemester,
 };
