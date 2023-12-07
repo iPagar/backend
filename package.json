@@ -57,6 +57,7 @@
     "text-table": "^0.2.0",
     "typeorm": "^0.3.17",
     "typescript": "^5.2.2",
+    "vk-io": "^4.8.3",
     "vkui-sign-checker": "^2.0.1",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.7.1",

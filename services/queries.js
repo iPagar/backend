@@ -186,19 +186,67 @@ function getMarks(id, semester) {
 }
 
 function getRating(semester, search, offset) {
-  return new Promise((resolve, reject) =>
-    pool.query(
-      `with allratings as (select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, ratings.rating, ratings.semester from students inner join ratings on ratings.id = students.id where students.is_deleted != TRUE and semester = ($1) AND stgroup not like CONCAT('%', 'Тест','%') ) select distinct number, id, stgroup, rating from allratings where lower(surname) like CONCAT('%', trim(lower($2)),'%') OR lower(stgroup) like CONCAT('%', trim(lower($2)),'%') OR CAST(id AS TEXT) LIKE CAST(($2) AS TEXT) order by number asc limit 10 offset ($3) * 10`,
-      [semester, search, offset],
-      (error, results) => {
-        if (error) {
-          return reject(error);
-        }
-        return resolve(results.rows);
-      }
-    )
-  );
+  return new Promise((resolve, reject) => {
+    const queryData = `with allratings as (
+        select ROW_number() over (order by ratings.rating desc) as number,
+               students.surname, students.id, students.stgroup, 
+               ratings.rating, ratings.semester 
+        from students 
+        inner join ratings on ratings.id = students.id 
+        where students.is_deleted != TRUE 
+          and semester = $1 
+          and stgroup not like CONCAT('%', 'Тест','%') 
+      ) 
+      select distinct number, id, stgroup, rating 
+      from allratings 
+      where lower(surname) like CONCAT('%', trim(lower($2)),'%') 
+         or lower(stgroup) like CONCAT('%', trim(lower($2)),'%') 
+         or CAST(id AS TEXT) LIKE CAST($2 AS TEXT) 
+      order by number asc 
+      limit 10 offset $3 * 10`;
+
+    const queryCount = `with allratings as (
+        select students.id, students.stgroup, ratings.rating, ratings.semester, students.surname
+        from students
+        inner join ratings on ratings.id = students.id
+        where students.is_deleted != TRUE
+          and semester = $1
+          and stgroup not like CONCAT('%', 'Тест','%')
+      )
+      select count(*) as total
+      from allratings
+      where lower(surname) like CONCAT('%', trim(lower($2)),'%')
+         or lower(stgroup) like CONCAT('%', trim(lower($2)),'%')
+         or CAST(id AS TEXT) LIKE CAST($2 AS TEXT)`;
+
+    // Выполняем оба запроса параллельно
+    Promise.all([
+      pool.query(queryData, [semester, search, offset]),
+      pool.query(queryCount, [semester, search]),
+    ])
+      .then(([dataResult, countResult]) => {
+        const data = dataResult.rows;
+        const total = parseInt(countResult.rows[0].total, 10);
+        resolve({ data, total });
+      })
+      .catch((error) => reject(error));
+  });
 }
+
+// function getRating(semester, search, offset) {
+//   return new Promise((resolve, reject) =>
+//     pool.query(
+//       `with allratings as (select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, ratings.rating, ratings.semester from students inner join ratings on ratings.id = students.id where students.is_deleted != TRUE and semester = ($1) AND stgroup not like CONCAT('%', 'Тест','%') ) select distinct number, id, stgroup, rating from allratings where lower(surname) like CONCAT('%', trim(lower($2)),'%') OR lower(stgroup) like CONCAT('%', trim(lower($2)),'%') OR CAST(id AS TEXT) LIKE CAST(($2) AS TEXT) order by number asc limit 10 offset ($3) * 10`,
+//       [semester, search, offset],
+//       (error, results) => {
+//         if (error) {
+//           return reject(error);
+//         }
+//         return resolve(results.rows);
+//       }
+//     )
+//   );
+// }
 
 function getAllRating(semester) {
   return new Promise((resolve, reject) =>

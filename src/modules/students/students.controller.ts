@@ -5,12 +5,20 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   Res,
   UseGuards,
 } from "@nestjs/common";
 import { StudentEntity } from "../../entities/student.entity";
-import { ApiBody, ApiOkResponse, ApiParam, ApiTags } from "@nestjs/swagger";
-import { GetStudentDto } from "./dto/get-student.dto";
+import {
+  ApiBody,
+  ApiExtraModels,
+  ApiOkResponse,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from "@nestjs/swagger";
+import { StudentDto, StudentRatingDto } from "./dto/get-student.dto";
 import { VkUserGuard, VkUser } from "../../common/guards/vk-user.guard";
 import { VkUserParam } from "../../common/decorators/vk-user.decorator";
 import { LoginDto } from "./dto/login.dto";
@@ -26,16 +34,33 @@ import { StudentGuard } from "../../common/guards/student.guard";
 import { StudentParam } from "../../common/decorators/student.decorator";
 import { PrismaService } from "../../prisma.service";
 import { getFilteredMarks, getRating } from "../../common/marks.helpers";
+import { students } from "@prisma/client";
+import {
+  ApiPaginationQuery,
+  PaginationDto,
+} from "../../common/dto/pagination.dto";
+import {
+  PaginationResponseDto,
+  paginationResponse,
+} from "../../common/helpers/pagination.helper";
+import { VK } from "vk-io";
+import db from "../../../services/queries";
+
+const vk = new VK({
+  token: process.env.VK_SERVICE_TOKEN!,
+  language: "ru",
+});
 
 @Controller("students")
 @ApiTags("Students")
+@ApiExtraModels(StudentRatingDto)
 export class StudentsController {
   constructor(private prisma: PrismaService) {}
 
   @Get("me")
   @ApiOkResponse({
     description: "Student retrieved successfully",
-    type: GetStudentDto,
+    type: StudentDto,
   })
   @UseGuards(VkUserGuard)
   async getMe(@VkUserParam() vkUser: VkUser) {
@@ -46,7 +71,8 @@ export class StudentsController {
     });
 
     if (foundStudent) {
-      return foundStudent;
+      const { password, ...rest } = foundStudent;
+      return { ...rest };
     }
 
     throw new NotFoundException();
@@ -55,16 +81,56 @@ export class StudentsController {
   @Get()
   @ApiOkResponse({
     description: "Students retrieved successfully",
-    type: [GetStudentDto],
+    schema: paginationResponse(StudentDto),
   })
   @ApiParam({
     name: "semester",
     description: "Semester to filter by",
     required: false,
   })
+  @ApiPaginationQuery()
   @UseGuards(VkUserGuard)
-  getAll(@Param("semester") semester?: string) {
-    return this.prisma.students.findMany({
+  async getAll(
+    @Query() paginationDto: PaginationDto,
+    @Param("semester") semester?: string
+  ): Promise<PaginationResponseDto<StudentDto>> {
+    const { page, limit } = paginationDto;
+
+    const students = await this.prisma.students.findMany({
+      where: {
+        marks: {
+          some: {
+            semester,
+          },
+        },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const filtered = students.map((student) => {
+      const { password, ...rest } = student;
+
+      return rest;
+    });
+
+    const vkUsers = await vk.api.users.get({
+      user_ids: filtered.map((student) => student.id),
+      fields: ["photo_200"],
+    });
+
+    const richStudents = filtered.map((student) => {
+      const vkUser = vkUsers.find((vkUser) => vkUser.id === Number(student.id));
+
+      return {
+        ...student,
+        photo: vkUser?.photo_200,
+        firstName: vkUser?.first_name,
+        lastName: vkUser?.last_name,
+      };
+    });
+
+    const total = await this.prisma.students.count({
       where: {
         marks: {
           some: {
@@ -73,6 +139,67 @@ export class StudentsController {
         },
       },
     });
+
+    return {
+      data: richStudents,
+      total,
+    };
+  }
+
+  @Get("rating")
+  @ApiPaginationQuery()
+  @ApiQuery({
+    name: "search",
+    description: "Search by student's name",
+    required: false,
+  })
+  @ApiQuery({
+    name: "semester",
+    description: "Semester to filter by",
+    required: false,
+  })
+  @ApiOkResponse({
+    description: "Students retrieved successfully",
+    schema: paginationResponse(StudentRatingDto),
+  })
+  async getRating(
+    @Query() paginationDto: PaginationDto,
+    @Query("semester") semester: string,
+    @Query("search") search = ""
+  ): Promise<PaginationResponseDto<StudentRatingDto>> {
+    const { page, limit } = paginationDto;
+    const offset = (page - 1) * limit;
+
+    const rating = (await db.getRating(semester, search, offset)) as {
+      data: {
+        number: string;
+        id: string;
+        stgroup: string;
+        rating: number;
+      }[];
+      total: number;
+    };
+
+    const vkUsers = await vk.api.users.get({
+      user_ids: rating.data.map((student) => student.id),
+      fields: ["photo_200"],
+    });
+
+    const richStudents = rating.data.map((student) => {
+      const vkUser = vkUsers.find((vkUser) => vkUser.id === Number(student.id));
+
+      return {
+        ...student,
+        photo: vkUser?.photo_200,
+        firstName: vkUser?.first_name,
+        lastName: vkUser?.last_name,
+      };
+    });
+
+    return {
+      data: richStudents,
+      total: rating.total,
+    };
   }
 
   @Post("login")
@@ -224,14 +351,21 @@ export class StudentsController {
   @Get(":id")
   @ApiOkResponse({
     description: "Student retrieved successfully",
-    type: GetStudentDto,
+    type: StudentDto,
   })
   @UseGuards(DisabledGuard)
-  getOne(@Param("id") id: number) {
-    return this.prisma.students.findUnique({
+  async getOne(@Param("id") id: number) {
+    const student = await this.prisma.students.findUnique({
       where: {
         id,
       },
     });
+
+    if (student) {
+      const { password, ...rest } = student;
+      return { ...rest };
+    }
+
+    throw new NotFoundException();
   }
 }
