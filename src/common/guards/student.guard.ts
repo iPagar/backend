@@ -33,7 +33,11 @@ export class StudentGuard implements CanActivate {
       });
 
       if (!student) {
-        throw new UnauthorizedException();
+        if (required) {
+          throw new UnauthorizedException();
+        }
+
+        return true;
       }
 
       request["student"] = student;
