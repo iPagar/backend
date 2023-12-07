@@ -363,7 +363,21 @@ export class StudentsController {
       distinct: ["semester"],
     });
 
-    return data.map((mark) => mark.semester);
+    return data
+      .map((mark) => mark.semester)
+      .sort((a, b) => {
+        // Разделяем строку на год и сезон
+        let partsA = a.split("-");
+        let partsB = b.split("-");
+
+        // Сравниваем годы
+        if (partsA[0] !== partsB[0]) {
+          return Number(partsA[0]) - Number(partsB[0]);
+        }
+
+        // Если годы одинаковые, сравниваем сезоны (весна перед осенью)
+        return partsA[1] === "весна" ? -1 : 1;
+      });
   }
 
   @Get(":id")
