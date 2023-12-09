@@ -44,16 +44,17 @@ model likes {
 }
 
 model marks {
-  id        Int
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  studentId Int
   semester  String    @db.VarChar(10)
   subject   String    @db.VarChar(200)
   module    String    @db.VarChar(2)
   value     Int
   factor    Float
-  students  students  @relation(fields: [id], references: [id], onDelete: Cascade)
+  student   students  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   semesters semesters @relation(fields: [semester], references: [semester], onDelete: NoAction, onUpdate: NoAction)
 
-  @@id([id, semester, subject, module])
+  @@unique([studentId, semester, subject, module])
 }
 
 model messages {

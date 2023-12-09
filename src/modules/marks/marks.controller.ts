@@ -56,7 +56,7 @@ export class MarksController {
   ) {
     return this.prisma.marks.findMany({
       where: {
-        students: {
+        student: {
           id: student.id,
         },
         semester,

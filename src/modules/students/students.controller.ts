@@ -366,7 +366,7 @@ export class StudentsController {
               factor: mark.factor,
               module: mark.num,
               semester: markGroup.semester,
-              id: createdStudent.id,
+              studentId: createdStudent.id,
             }))
           )
           .flat();
@@ -379,7 +379,7 @@ export class StudentsController {
           const marks = await tx.marks.findMany({
             where: {
               semester: makrGroup.semester,
-              students: { id: createdStudent.id },
+              student: { id: createdStudent.id },
             },
           });
 
@@ -433,7 +433,7 @@ export class StudentsController {
   async getStudentSemesters(@StudentParam() student: StudentEntity) {
     const data = await this.prisma.marks.findMany({
       where: {
-        students: {
+        student: {
           id: student.id,
         },
       },
