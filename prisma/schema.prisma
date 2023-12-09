@@ -99,7 +99,7 @@ model schoolarship {
 
 model semesters {
   semester      String          @id @db.VarChar(30)
-  history_marks history_marks[] @ignore
+  history_marks history_marks[]
   marks         marks[]
   ratings       ratings[]
 }
