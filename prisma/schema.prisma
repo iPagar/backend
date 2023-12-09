@@ -104,6 +104,13 @@ model semesters {
   ratings       ratings[]
 }
 
+model VkUser {
+  id        String     @id
+  students  students[]
+  notify    Boolean    @default(false)
+  isDeleted Boolean    @default(false)
+}
+
 model students {
   student                             Int                  @id
   password                            String?              @db.VarChar(30)
@@ -122,6 +129,8 @@ model students {
   ratings                             ratings[]
   teachers_comments                   teachers_comments[]
   teachers_reactions                  teachers_reactions[]
+  VkUser                              VkUser?              @relation(fields: [vkUserId], references: [id])
+  vkUserId                            String?
 }
 
 model teachers {
