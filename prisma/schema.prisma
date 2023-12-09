@@ -166,9 +166,10 @@ model teachers_reactions {
 }
 
 model vk_ref_platform {
-  number         Int    @id @default(autoincrement())
+  number         Int      @id @default(autoincrement())
   id             Int
-  vk_platform    String @db.VarChar
-  vk_ref         String @db.VarChar
-  vk_is_favorite String @db.VarChar
+  vk_platform    String   @db.VarChar
+  vk_ref         String   @db.VarChar
+  vk_is_favorite String   @db.VarChar
+  created_at     DateTime @default(now())
 }
