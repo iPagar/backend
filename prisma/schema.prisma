@@ -21,9 +21,8 @@ model copy {
   @@ignore
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model history_marks {
-  id         Int        @default(autoincrement())
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   student    Int?
   semester   String?    @db.VarChar(10)
   subject    String?    @db.VarChar(200)
@@ -33,8 +32,6 @@ model history_marks {
   operation  String?
   created_at DateTime?  @default(now()) @db.Timestamp(6)
   semesters  semesters? @relation(fields: [semester], references: [semester], onDelete: NoAction, onUpdate: NoAction)
-
-  @@ignore
 }
 
 model likes {
