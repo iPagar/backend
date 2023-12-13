@@ -4,6 +4,8 @@ const VkBot = require("node-vk-bot-api");
 const rp = require("request-promise");
 const db = require("./queries");
 const lk = require("./lk");
+import { logger } from "../config/winston";
+import { vkGroup } from "../src/common/utils/vk";
 
 const bot = new VkBot({
   token: process.env.VK_BOT,
@@ -14,102 +16,93 @@ cron.schedule("0 * * * *", () => {
   update();
 });
 
-async function checkAllowedMessages(students) {
+async function update() {
+  const started = new Date().toISOString();
+  logger.info("Updating students", {
+    started,
+  });
+  const lastSemesters = await db.getLastSemesters();
+  const prevStudents = await db.getStudentsBySemester(lastSemesters[1]);
+  const nowStudents = await db.getStudentsBySemester(lastSemesters[0]);
+
+  const uniqueStudents = new Map();
+
+  prevStudents.concat(nowStudents).forEach((student) => {
+    uniqueStudents.set(student.studentId, student);
+  });
+
+  const students = Array.from(uniqueStudents.values());
+
+  logger.info(`Updating students`, {
+    studentsLength: students.length,
+  });
+
   for (const i in students) {
-    // if (students[i].student === 318219)
-    console.log(i);
-    const options = {
-      method: "POST",
-      uri: `https://api.vk.com/method/messages.isMessagesFromGroupAllowed?group_id=183639424&user_id=${students[i].id}&v=5.126&access_token=${process.env.VK_BOT}`,
-      json: true,
-    };
-    await new Promise((resolve) => {
-      setTimeout(
-        () =>
-          rp(options).then((r) => {
-            console.log(students[i].id, r.response.is_allowed);
-            db.setNotify(students[i].id, r.response.is_allowed);
-            resolve();
-          }),
-        15
-      );
+    await updateStudent(lastSemesters[1], students[i], false).then(() => {
+      new Promise((resolve) => {
+        setTimeout(() => resolve(), 150);
+      });
+    });
+    await updateStudent(lastSemesters[0], students[i], true).then(() => {
+      new Promise((resolve) => {
+        setTimeout(() => resolve(), 150);
+      });
     });
   }
-}
-
-function update() {
-  db.getLastSemesters()
-    .then(async (semesters) => {
-      const prevStudents = await db.getStudentsBySemester(semesters[1]);
-      const nowStudents = await db.getStudentsBySemester(semesters[0]);
-
-      const students = Array.from(
-        new Set(
-          prevStudents
-            .concat(nowStudents)
-            .map((student) => JSON.stringify(student))
-        )
-      ).map((student) => JSON.parse(student));
-
-      // await checkAllowedMessages(students);
-
-      for (const i in students) {
-        // if (students[i].student === 318219)
-        console.log(i);
-        await updateStudent(semesters[1], students[i], false).then(() => {
-          new Promise((resolve) => {
-            setTimeout(() => resolve(), 150);
-          });
-        });
-        await updateStudent(semesters[0], students[i], true).then(() => {
-          new Promise((resolve) => {
-            setTimeout(() => resolve(), 150);
-          });
-        });
-      }
-      console.log("vse");
-    })
-    .catch((err) => console.log(err));
+  logger.info("Updating students finished", {
+    started,
+    finished: new Date().toISOString(),
+    duration: new Date().getTime() - new Date(started).getTime(),
+  });
 }
 
 async function updateStudent(semester, stud, isLast) {
-  const { student, password, id, notify } = stud;
+  const { studentId, password, vkUserId, notify } = stud;
 
-  // updating semesters list
   try {
-    await updateSemesters(student, password, id);
-
+    // updating semesters list
+    await updateSemesters(studentId, password);
     // update student settings
-    await lk.getStudent(student, password).then((response) => {
-      const { surname, initials, stgroup } = response;
+    const lkStudent = await lk.getStudent(studentId, password);
 
-      return db.createStudent(
-        student,
-        password,
-        surname,
-        initials,
-        stgroup,
-        id
-      );
-    });
-    await updateRatings(id, semester);
-  } catch (e) {
-    console.log(student, e.statusCode, "lk.getStudent");
-  }
+    const { surname, initials, stgroup } = lkStudent;
 
-  // update marks
-  try {
+    await db.createStudent(studentId, password, surname, initials, stgroup);
+    await updateRatings(studentId, semester);
+
+    // update marks
     const updatedMarks = await updateMarksBySemester(
       semester,
-      student,
-      password,
-      id
+      studentId,
+      password
     );
+    logger.info(`Updated student marks`, {
+      studentId,
+      semester,
+      updatedMarksLength: updatedMarks.length,
+    });
 
     // update rating
-    await updateRatings(id, semester);
+    await updateRatings(studentId, semester);
 
-    if (updatedMarks && updatedMarks.length) console.log(student, updatedMarks);
+    if (notify) {
+      const isMessagesAllowed =
+        await vkGroup.api.messages.isMessagesFromGroupAllowed({
+          group_id: 183639424,
+          user_id: vkUserId,
+        });
+
+      const isAllowed = !!isMessagesAllowed.is_allowed;
+
+      if (isAllowed !== notify) {
+        await db.setNotify(vkUserId, isAllowed);
+        logger.info(`Updating student property notify`, {
+          studentId,
+          semester,
+          isAllowed,
+        });
+      }
+    }
 
     if (updatedMarks && updatedMarks.length > 0 && notify) {
       const notifyText = await makeNotifyText(
@@ -118,11 +111,22 @@ async function updateStudent(semester, stud, isLast) {
         semester,
         isLast
       );
+      logger.info(`Sending message to student`, {
+        studentId,
+        semester,
+      });
       await bot.sendMessage(id, notifyText.text, null, notifyText.keyboard);
+      logger.info(`Sent message to student`, {
+        studentId,
+        semester,
+      });
     }
   } catch (e) {
-    console.log(e, "lk.getMarks");
-    // return updateStudent(semester, stud, isLast);
+    logger.error(`Error updating student`, {
+      studentId,
+      semester,
+      stack: e.stack,
+    });
   }
 }
 
@@ -192,11 +196,11 @@ async function makeNotifyText(id, updatedMarks, semester, isLast) {
   return { text, keyboard };
 }
 
-async function updateMarksBySemester(semester, student, password, id) {
-  const prevMarks = await db.getMarks(id, semester);
+async function updateMarksBySemester(semester, studentId, password) {
+  const prevMarks = await db.getMarks(studentId, semester);
 
   try {
-    const newMarks = await lk.getMarks(student, password, semester);
+    const newMarks = await lk.getMarks(studentId, password, semester);
 
     const updatedMarks = newMarks.reduce((updatedMarks, newMark, i) => {
       const { title, num, value } = newMark;
@@ -237,9 +241,9 @@ async function updateMarksBySemester(semester, student, password, id) {
     if (deletedMarks.length > 0)
       await Promise.all(
         deletedMarks.map((mark) => {
-          const { subject, module } = mark;
+          const { id } = mark;
 
-          return db.deleteMark(id, semester, subject, module);
+          return db.deleteMark(id);
         })
       );
 
@@ -247,17 +251,16 @@ async function updateMarksBySemester(semester, student, password, id) {
       newMarks.map((mark) => {
         const { title, num, value, factor } = mark;
 
-        return db.createMark(id, semester, title, num, value, factor);
+        return db.createMark(studentId, semester, title, num, value, factor);
       })
     );
 
     return updatedMarks;
   } catch (e) {
     if (e.statusCode !== 401) {
-      console.log(student, e.statusCode, "updating marks");
-      // return updateMarksBySemester(semester, student, password, id);
+      console.log(studentId, e, "updating marks");
     } else {
-      console.log(student, e.statusCode, "updating marks");
+      console.log(studentId, e, "updating marks");
       return [];
     }
   }
@@ -391,12 +394,12 @@ function registerStudent(student, password, id) {
     .catch((e) => console.log(e));
 }
 
-export function updateSemesters(student, password) {
-  return lk
-    .getSemesters(student, password)
-    .then((semesters) =>
-      Promise.all(semesters.map((semester) => db.createSemester(semester)))
-    );
+export async function updateSemesters(student, password) {
+  const semesters = await lk.getSemesters(student, password);
+
+  return await Promise.all(
+    semesters.map((semester) => db.createSemester(semester))
+  );
 }
 
 function updateMarks(student, password, id, semester) {
@@ -411,92 +414,86 @@ function updateMarks(student, password, id, semester) {
   );
 }
 
-function getMarks(id, semester) {
-  return db.getMarks(id, semester).then((marks) => {
-    const groups = [];
-
-    for (let element of marks) {
-      let existingGroups = groups.filter(
-        (group) => group.subject === element.subject
-      );
-      if (existingGroups.length > 0) {
-        existingGroups[0].marks[`${element.module}`] = element.value;
-      } else {
-        let newGroup = {
-          marks: {
-            [`${element.module}`]: element.value,
-          },
-          subject: element.subject,
-          factor: element.factor,
-        };
-        groups.push(newGroup);
-      }
+async function getMarks(studentId, semester) {
+  const marks = await db.getMarks(studentId, semester);
+  const groups = [];
+  for (let element of marks) {
+    let existingGroups = groups.filter(
+      (group) => group.subject === element.subject
+    );
+    if (existingGroups.length > 0) {
+      existingGroups[0].marks[`${element.module}`] = element.value;
+    } else {
+      let newGroup = {
+        marks: {
+          [`${element.module}`]: element.value,
+        },
+        subject: element.subject,
+        factor: element.factor,
+      };
+      groups.push(newGroup);
     }
-
-    return groups;
-  });
+  }
+  return groups;
 }
 
 function getSemesters(id) {
   return db.getSemesters(id).then((semesters) => semesters.sort());
 }
 
-function updateRatings(id, semester) {
-  return getMarks(id, semester).then((subjects) => {
-    const isAll =
-      subjects.length > 0
-        ? subjects.every((subject) =>
-            Object.keys(subject.marks).every((module) => {
-              const value = subject.marks[module];
-              const factor = parseFloat(subject.factor);
+async function updateRatings(studentId, semester) {
+  const subjects = await getMarks(studentId, semester);
+  const isAll =
+    subjects.length > 0
+      ? subjects.every((subject) =>
+          Object.keys(subject.marks).every((module) => {
+            const value_1 = subject.marks[module];
+            const factor = parseFloat(subject.factor);
 
-              return value >= 25 && factor > 0;
-            })
-          )
-        : false;
+            return value_1 >= 25 && factor > 0;
+          })
+        )
+      : false;
+  if (isAll) {
+    let sum = 0;
+    let sumFactor = 0;
 
-    if (isAll) {
-      let sum = 0;
-      let sumFactor = 0;
+    subjects.forEach((subject_1) => {
+      let sumFactorSubject = 0;
+      let sumSubject = 0;
 
-      subjects.forEach((subject) => {
-        let sumFactorSubject = 0;
-        let sumSubject = 0;
+      const factor_1 = parseFloat(subject_1.factor);
 
-        const factor = parseFloat(subject.factor);
+      Object.keys(subject_1.marks).forEach((module_1) => {
+        const value_2 = subject_1.marks[module_1];
 
-        Object.keys(subject.marks).forEach((module) => {
-          const value = subject.marks[module];
-
-          if (module === "М1") {
-            sumFactorSubject += 3;
-            sumSubject += value * 3;
-          } else if (module === "М2") {
-            sumFactorSubject += 2;
-            sumSubject += value * 2;
-          } else if (module === "З") {
-            sumFactorSubject += 5;
-            sumSubject += value * 5;
-          } else if (module === "К") {
-            sumFactorSubject += 5;
-            sumSubject += value * 5;
-          } else if (module === "Э") {
-            sumFactorSubject += 7;
-            sumSubject += value * 7;
-          }
-        });
-
-        sumFactor += factor;
-        sum += (sumSubject / sumFactorSubject) * factor;
+        if (module_1 === "М1") {
+          sumFactorSubject += 3;
+          sumSubject += value_2 * 3;
+        } else if (module_1 === "М2") {
+          sumFactorSubject += 2;
+          sumSubject += value_2 * 2;
+        } else if (module_1 === "З") {
+          sumFactorSubject += 5;
+          sumSubject += value_2 * 5;
+        } else if (module_1 === "К") {
+          sumFactorSubject += 5;
+          sumSubject += value_2 * 5;
+        } else if (module_1 === "Э") {
+          sumFactorSubject += 7;
+          sumSubject += value_2 * 7;
+        }
       });
 
-      const rating = sum / sumFactor;
+      sumFactor += factor_1;
+      sum += (sumSubject / sumFactorSubject) * factor_1;
+    });
 
-      return db.createRating(id, semester, rating);
-    }
+    const rating = sum / sumFactor;
 
-    return db.deleteRatingById(id, semester);
-  });
+    return db.createRating(studentId, semester, rating);
+  }
+  return await db.deleteRatingById(studentId, semester);
 }
 
 function getRating(semester, search, offset) {

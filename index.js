@@ -11,7 +11,7 @@ const helmet = require("helmet");
 const check = require("vkui-sign-checker");
 // loggers and error handlers
 const createError = require("http-errors");
-const winston = require("./config/winston");
+const { expressLogger } = require("./config/winston");
 
 const app = express();
 
@@ -22,7 +22,7 @@ app.use(
 );
 app.use(cors());
 if (process.env.NODE_ENV === "production") {
-  app.use(winston);
+  app.use(expressLogger);
 }
 app.disable("x-powered-by");
 

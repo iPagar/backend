@@ -38,7 +38,7 @@ function getMarksHistory(student) {
 function getStudentsBySemester(semester) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT DISTINCT student, password, students.id, students.notify FROM marks INNER JOIN students ON students.id = marks.id WHERE semester = ($1) AND stgroup not like CONCAT('%', 'Тест','%')",
+      `SELECT DISTINCT students.id as "studentId", students.password, "VkUser"."id" as "vkUserId", "VkUser"."notify" FROM marks INNER JOIN students ON students.id = marks."studentId" INNER JOIN "VkUser" ON "VkUser".id = students."vkUserId" WHERE semester = ($1) AND stgroup not like CONCAT('%', 'Тест','%')`,
       [semester],
       (error, results) => {
         if (error) {
@@ -65,11 +65,11 @@ function getSemesters(id) {
   );
 }
 
-function createStudent(student, password, surname, initials, stgroup, id) {
+function createStudent(studentId, password, surname, initials, stgroup) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO students VALUES ($1, $2, $3, $4, $5, $6, FALSE) ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password, surname = EXCLUDED.surname, initials = EXCLUDED.initials, stgroup = EXCLUDED.stgroup, id = EXCLUDED.id, student = EXCLUDED.student, is_deleted = EXCLUDED.is_deleted RETURNING *",
-      [student, password, surname, initials, stgroup, id],
+      "INSERT INTO students (id, password, surname, initials, stgroup) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password, surname = EXCLUDED.surname, initials = EXCLUDED.initials, stgroup = EXCLUDED.stgroup, id = EXCLUDED.id, is_deleted = EXCLUDED.is_deleted RETURNING *",
+      [studentId, password, surname, initials, stgroup],
       (error, results) => {
         if (error) {
           return reject(error);
@@ -125,11 +125,11 @@ function createSemester(semester) {
   );
 }
 
-function createMark(id, semester, subject, module, value, factor) {
+function createMark(studentId, semester, subject, module, value, factor) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO marks VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id, semester, subject, module) DO UPDATE SET value = EXCLUDED.value, factor = EXCLUDED.factor",
-      [id, semester, subject, module, value, factor],
+      `INSERT INTO marks ("studentId", semester, subject, module, value, factor) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT ("studentId", semester, subject, module) DO UPDATE SET value = EXCLUDED.value, factor = EXCLUDED.factor`,
+      [studentId, semester, subject, module, value, factor],
       (error) => {
         if (error) {
           return reject(error);
@@ -140,11 +140,22 @@ function createMark(id, semester, subject, module, value, factor) {
   );
 }
 
-function deleteMark(id, semester, subject, module) {
+function deleteMark(id) {
+  return new Promise((resolve, reject) =>
+    pool.query("DELETE FROM marks WHERE id = $1", [id], (error, results) => {
+      if (error) {
+        return reject(error);
+      }
+      return resolve(results.rowCount);
+    })
+  );
+}
+
+function createRating(studentId, semester, rating) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "DELETE FROM marks WHERE id = $1 AND semester = $2 AND subject = $3 AND module = $4",
-      [id, semester, subject, module],
+      `INSERT INTO ratings VALUES ($1, $2, $3) ON CONFLICT (id, semester) DO UPDATE SET rating = EXCLUDED.rating`,
+      [studentId, semester, rating],
       (error, results) => {
         if (error) {
           return reject(error);
@@ -155,26 +166,11 @@ function deleteMark(id, semester, subject, module) {
   );
 }
 
-function createRating(id, semester, rating) {
+function getMarks(studentId, semester) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "INSERT INTO ratings VALUES ($1, $2, $3) ON CONFLICT (id, semester) DO UPDATE SET rating = EXCLUDED.rating",
-      [id, semester, rating],
-      (error, results) => {
-        if (error) {
-          return reject(error);
-        }
-        return resolve(results.rowCount);
-      }
-    )
-  );
-}
-
-function getMarks(id, semester) {
-  return new Promise((resolve, reject) =>
-    pool.query(
-      `select subject, module, value, factor from marks where id = ($1) and semester = ($2)`,
-      [id, semester],
+      `select subject, module, value, factor from marks where "studentId" = ($1) and semester = ($2)`,
+      [studentId, semester],
       (error, results) => {
         if (error) {
           return reject(error);
@@ -350,11 +346,11 @@ function notify(id) {
   );
 }
 
-function setNotify(id, notify2) {
+function setNotify(vkUserId, notify) {
   return new Promise((resolve, reject) =>
     pool.query(
-      `UPDATE students SET notify = ($2) WHERE id = ($1)`,
-      [id, notify2],
+      `UPDATE "VkUser" SET notify = ($2) WHERE id = ($1)`,
+      [vkUserId, notify],
       (error) => {
         if (error) {
           return reject(error);

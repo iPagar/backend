@@ -55,13 +55,8 @@ import {
   PaginationResponseDto,
   paginationResponse,
 } from "../../common/helpers/pagination.helper";
-import { VK } from "vk-io";
 import db from "../../../services/queries";
-
-const vk = new VK({
-  token: process.env.VK_SERVICE_TOKEN!,
-  language: "ru",
-});
+import { vkService } from "../../common/utils/vk";
 
 @Controller("students")
 @ApiTags("Students")
@@ -132,7 +127,7 @@ export class StudentsController {
       return rest;
     });
 
-    const vkUsers = await vk.api.users.get({
+    const vkUsers = await vkService.api.users.get({
       user_ids: filtered.map((student) => student.vkUserId),
       fields: ["photo_200"],
     });
@@ -190,7 +185,7 @@ export class StudentsController {
       vkUserId: string;
     };
 
-    const richByVk = await vk.api.users.get({
+    const richByVk = await vkService.api.users.get({
       user_ids: [student.vkUserId],
       fields: ["photo_200"],
     });
@@ -223,7 +218,7 @@ export class StudentsController {
       vkUserId: string;
     }[];
 
-    const vkUsers = await vk.api.users.get({
+    const vkUsers = await vkService.api.users.get({
       user_ids: rating.map((student) => student.vkUserId),
       fields: ["photo_200"],
     });
@@ -279,7 +274,7 @@ export class StudentsController {
       total: number;
     };
 
-    const vkUsers = await vk.api.users.get({
+    const vkUsers = await vkService.api.users.get({
       user_ids: rating.data.map((student) => student.vkUserId),
       fields: ["photo_200"],
     });

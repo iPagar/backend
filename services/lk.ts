@@ -67,7 +67,7 @@ async function getMarks(
       num: string;
       value: number;
       factor: number;
-    }
+    },
   ];
   return marks.filter(
     (mark) => mark.title !== "Рейтинг" && mark.title !== "Накопленный Рейтинг"
@@ -78,23 +78,29 @@ async function getSemesters(
   student: number,
   password: string
 ): Promise<string[]> {
-  const options = {
-    method: "POST",
-    url: pathSemesters,
-    headers: {
-      "content-type": "application/x-www-form-urlencoded; charset=utf-8",
-    },
-    data: {
-      student,
-      password,
-    },
-  };
+  try {
+    const options = {
+      method: "POST",
+      url: pathSemesters,
+      headers: {
+        "content-type": "application/x-www-form-urlencoded; charset=utf-8",
+      },
+      data: {
+        student,
+        password,
+      },
+    };
 
-  if (student >= 999000 && student <= 999999) {
-    return ["2019-осень"];
+    if (student >= 999000 && student <= 999999) {
+      return ["2019-осень"];
+    }
+    const response = await http(options);
+
+    return response.data.semesters;
+  } catch (e) {
+    const httpError = e as { response: { status: number } };
+    throw new Error(`Ошибка ${httpError.response.status} при запросе к ЛК`);
   }
-  const response = await http(options);
-  return response.data.semesters;
 }
 
 async function getStudent(
@@ -105,32 +111,37 @@ async function getStudent(
   surname: string;
   initials: string;
 }> {
-  const options = {
-    method: "POST",
-    url: pathSemesters,
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    data: {
-      student,
-      password,
-    },
-  };
-
-  if (student >= 999000 && student <= 999999) {
-    return {
-      surname: "Тест",
-      initials: "Тест",
-      stgroup: `Тест-${Math.floor(Math.random() * (15 - 10)) + 10}`,
+  try {
+    const options = {
+      method: "POST",
+      url: pathSemesters,
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      data: {
+        student,
+        password,
+      },
     };
-  }
 
-  const response = (await http(options)).data;
-  return {
-    stgroup: response.stgroup,
-    surname: response.surname,
-    initials: response.initials,
-  };
+    if (student >= 999000 && student <= 999999) {
+      return {
+        surname: "Тест",
+        initials: "Тест",
+        stgroup: `Тест-${Math.floor(Math.random() * (15 - 10)) + 10}`,
+      };
+    }
+
+    const response = (await http(options)).data;
+    return {
+      stgroup: response.stgroup,
+      surname: response.surname,
+      initials: response.initials,
+    };
+  } catch (e) {
+    const httpError = e as { response: { status: number } };
+    throw new Error(`Ошибка ${httpError.response.status} при запросе к ЛК`);
+  }
 }
 
 export { getStudent, getSemesters, getMarks };
