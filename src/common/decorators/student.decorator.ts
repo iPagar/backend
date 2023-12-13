@@ -5,14 +5,13 @@ import {
   SetMetadata,
   UseGuards,
 } from "@nestjs/common";
-import { StudentEntity } from "../../entities/student.entity";
-import { StudentGuard } from "../guards/student.guard";
-import { ApiBearerAuth, ApiHeader } from "@nestjs/swagger";
+import { StudentGuard, StudentParamType } from "../guards/student.guard";
+import { ApiBearerAuth } from "@nestjs/swagger";
 
 export const StudentParam = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return request.student as StudentEntity;
+    return request.student as StudentParamType;
   }
 );
 

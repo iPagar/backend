@@ -23,7 +23,7 @@ export class PublicCommentDto extends CommonCommentDto {
   type = "public" as const;
 
   @ApiProperty()
-  vkId: number;
+  vkId: string;
 }
 
 export class PrivateCommentDto extends CommonCommentDto {

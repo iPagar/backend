@@ -8,12 +8,6 @@ export class StudentDto {
   id: number;
 
   @ApiProperty({
-    format: "int32",
-    example: 152743,
-  })
-  student: number;
-
-  @ApiProperty({
     format: "string",
     example: "Иван",
     nullable: true,

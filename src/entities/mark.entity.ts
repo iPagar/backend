@@ -1,5 +1,4 @@
 import { Entity, Column, PrimaryColumn, ManyToOne, JoinColumn } from "typeorm";
-import { StudentEntity } from "./student.entity";
 import { SemesterEntity } from "./semester.entity";
 import { ApiProperty } from "@nestjs/swagger";
 
@@ -10,10 +9,6 @@ export class MarkEntity {
     example: 123432,
   })
   id: number;
-
-  @ManyToOne(() => StudentEntity)
-  @JoinColumn({ name: "id" })
-  student: StudentEntity;
 
   @PrimaryColumn({
     type: "varchar",

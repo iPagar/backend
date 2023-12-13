@@ -119,7 +119,8 @@ CREATE TABLE "students" (
     "notify" BOOLEAN DEFAULT false,
     "is_deleted" BOOLEAN NOT NULL DEFAULT false,
 
-    CONSTRAINT "students_pkey" PRIMARY KEY ("student")
+    CONSTRAINT "students_pkey" PRIMARY KEY ("student"),
+    CONSTRAINT "students_id_key" UNIQUE ("id")
 );
 
 -- CreateTable
@@ -164,9 +165,6 @@ CREATE TABLE "vk_ref_platform" (
 
     CONSTRAINT "vk_ref_platform_pkey" PRIMARY KEY ("number")
 );
-
--- CreateIndex
-CREATE UNIQUE INDEX "students_id_key" ON "students"("id");
 
 -- AddForeignKey
 ALTER TABLE "comments" ADD CONSTRAINT "comments_id_fkey" FOREIGN KEY ("id") REFERENCES "students"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;

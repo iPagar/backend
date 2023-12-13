@@ -106,31 +106,30 @@ model semesters {
 }
 
 model VkUser {
-  id        String     @id
-  students  students[]
-  notify    Boolean    @default(false)
-  isDeleted Boolean    @default(false)
+  id                 String               @id
+  students           students[]
+  notify             Boolean              @default(false)
+  isDeleted          Boolean              @default(false)
+  teachers_comments  teachers_comments[]
+  teachers_reactions teachers_reactions[]
 }
 
 model students {
-  student                             Int                  @id
-  password                            String?              @db.VarChar(30)
-  surname                             String?              @db.VarChar(30)
-  initials                            String?              @db.VarChar(30)
-  stgroup                             String?              @db.VarChar(30)
-  id                                  Int                  @unique
-  notify                              Boolean?             @default(false)
-  is_deleted                          Boolean              @default(false)
-  likes_likes_from_idTostudents       likes[]              @relation("likes_from_idTostudents")
-  likes_likes_to_idTostudents         likes[]              @relation("likes_to_idTostudents")
+  id                                  Int        @id
+  password                            String?    @db.VarChar(30)
+  surname                             String?    @db.VarChar(30)
+  initials                            String?    @db.VarChar(30)
+  stgroup                             String?    @db.VarChar(30)
+  notify                              Boolean?   @default(false)
+  is_deleted                          Boolean    @default(false)
+  likes_likes_from_idTostudents       likes[]    @relation("likes_from_idTostudents")
+  likes_likes_to_idTostudents         likes[]    @relation("likes_to_idTostudents")
   marks                               marks[]
-  messages_messages_from_idTostudents messages[]           @relation("messages_from_idTostudents")
-  messages_messages_to_idTostudents   messages[]           @relation("messages_to_idTostudents")
+  messages_messages_from_idTostudents messages[] @relation("messages_from_idTostudents")
+  messages_messages_to_idTostudents   messages[] @relation("messages_to_idTostudents")
   ol                                  ol?
   ratings                             ratings[]
-  teachers_comments                   teachers_comments[]
-  teachers_reactions                  teachers_reactions[]
-  VkUser                              VkUser?              @relation(fields: [vkUserId], references: [id])
+  VkUser                              VkUser?    @relation(fields: [vkUserId], references: [id])
   vkUserId                            String?
 }
 
@@ -154,25 +153,27 @@ enum Status {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model teachers_comments {
-  id         Int
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vkUserId   String
   name       String   @db.VarChar(250)
   comment    String   @db.VarChar
   is_public  Boolean  @default(true)
   created_at DateTime @default(dbgenerated("(now() + '03:00:00'::interval)")) @db.Date
-  students   students @relation(fields: [id], references: [id], onDelete: Cascade)
+  vkUser     VkUser   @relation(fields: [vkUserId], references: [id], onDelete: Cascade)
   teachers   teachers @relation(fields: [name], references: [name], onDelete: NoAction, onUpdate: NoAction)
 
-  @@id([id, name])
+  @@unique([vkUserId, name])
 }
 
 model teachers_reactions {
-  id       Int
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vkUserId String
   name     String   @db.VarChar(250)
   reaction Int
-  students students @relation(fields: [id], references: [id], onDelete: Cascade)
+  vkUser   VkUser   @relation(fields: [vkUserId], references: [id], onDelete: Cascade)
   teachers teachers @relation(fields: [name], references: [name], onDelete: NoAction, onUpdate: NoAction)
 
-  @@id([id, name])
+  @@unique([vkUserId, name])
 }
 
 model vk_ref_platform {

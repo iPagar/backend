@@ -1,5 +1,4 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from "typeorm";
-import { StudentEntity } from "./student.entity";
 import { ApiProperty } from "@nestjs/swagger";
 
 @Entity("ratings")
@@ -21,11 +20,4 @@ export class RatingEntity {
     example: 4.5,
   })
   rating: number;
-
-  @ManyToOne(() => StudentEntity, (student) => student.id, {
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
-  })
-  @JoinColumn({ name: "id" })
-  student: StudentEntity;
 }

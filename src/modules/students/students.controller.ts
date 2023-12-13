@@ -9,7 +9,6 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { StudentEntity } from "../../entities/student.entity";
 import {
   ApiBody,
   ApiExtraModels,
@@ -37,7 +36,10 @@ import {
 } from "../../../services/lk";
 import { Response } from "express";
 import { DisabledGuard } from "../../common/guards/disabled.guard";
-import { StudentGuard } from "../../common/guards/student.guard";
+import {
+  StudentGuard,
+  StudentParamType,
+} from "../../common/guards/student.guard";
 import {
   StudentParam,
   UseStudent,
@@ -74,9 +76,9 @@ export class StudentsController {
   })
   @UseVkUser()
   async getMe(@VkUserParam() vkUser: VkUser) {
-    const foundStudent = await this.prisma.students.findUnique({
+    const foundStudent = await this.prisma.students.findFirst({
       where: {
-        id: Number(vkUser.vk_user_id),
+        vkUserId: vkUser.vk_user_id,
       },
     });
 
@@ -113,6 +115,12 @@ export class StudentsController {
             semester,
           },
         },
+        VkUser: {
+          isNot: null,
+        },
+      },
+      include: {
+        VkUser: true,
       },
       skip: (page - 1) * limit,
       take: limit,
@@ -125,18 +133,21 @@ export class StudentsController {
     });
 
     const vkUsers = await vk.api.users.get({
-      user_ids: filtered.map((student) => student.id),
+      user_ids: filtered.map((student) => student.vkUserId),
       fields: ["photo_200"],
     });
 
     const richStudents = filtered.map((student) => {
-      const vkUser = vkUsers.find((vkUser) => vkUser.id === Number(student.id));
+      const vkUser = vkUsers.find(
+        (vkUser) => vkUser.id.toString() === student.vkUserId
+      );
 
       return {
         ...student,
         photo: vkUser?.photo_200,
         firstName: vkUser?.first_name,
         lastName: vkUser?.last_name,
+        id: student.id,
       };
     });
 
@@ -167,7 +178,7 @@ export class StudentsController {
   })
   @UseStudent()
   async getMeRating(
-    @StudentParam() student: StudentDto,
+    @StudentParam() student: StudentParamType,
     @Query("semester") semester: string
   ): Promise<PersonalStudentRatingDto> {
     const rating = (await db.getStudentRatingAndNumberInTheListBySemester(
@@ -176,10 +187,11 @@ export class StudentsController {
     )) as null | {
       rating: number;
       number: string;
+      vkUserId: string;
     };
 
     const richByVk = await vk.api.users.get({
-      user_ids: [student.id],
+      user_ids: [student.vkUserId],
       fields: ["photo_200"],
     });
 
@@ -208,15 +220,18 @@ export class StudentsController {
       number: string;
       id: number;
       rating: number;
+      vkUserId: string;
     }[];
 
     const vkUsers = await vk.api.users.get({
-      user_ids: rating.map((student) => student.id),
+      user_ids: rating.map((student) => student.vkUserId),
       fields: ["photo_200"],
     });
 
     const richStudents = rating.map((student) => {
-      const vkUser = vkUsers.find((vkUser) => vkUser.id === Number(student.id));
+      const vkUser = vkUsers.find(
+        (vkUser) => vkUser.id.toString() === student.vkUserId
+      );
 
       return {
         ...student,
@@ -259,17 +274,20 @@ export class StudentsController {
         id: number;
         stgroup: string;
         rating: number;
+        vkUserId: string;
       }[];
       total: number;
     };
 
     const vkUsers = await vk.api.users.get({
-      user_ids: rating.data.map((student) => student.id),
+      user_ids: rating.data.map((student) => student.vkUserId),
       fields: ["photo_200"],
     });
 
     const richStudents = rating.data.map((student) => {
-      const vkUser = vkUsers.find((vkUser) => vkUser.id === Number(student.id));
+      const vkUser = vkUsers.find(
+        (vkUser) => vkUser.id.toString() === student.vkUserId
+      );
 
       return {
         ...student,
@@ -301,17 +319,17 @@ export class StudentsController {
 
     const foundStudent = await this.prisma.students.findUnique({
       where: {
-        student: Number(loginDto.studentId),
+        id: Number(loginDto.studentId),
       },
     });
 
     if (foundStudent) {
       await this.prisma.students.update({
         where: {
-          student: Number(loginDto.studentId),
+          id: Number(loginDto.studentId),
         },
         data: {
-          id: Number(vkUser.vk_user_id),
+          vkUserId: vkUser.vk_user_id,
         },
       });
     } else {
@@ -344,12 +362,21 @@ export class StudentsController {
       return await this.prisma.$transaction(async (tx) => {
         const createdStudent = await tx.students.create({
           data: {
-            id: Number(vkUser.vk_user_id),
             surname,
             initials,
             stgroup,
-            student: Number(loginDto.studentId),
+            id: Number(loginDto.studentId),
             password: loginDto.password,
+            VkUser: {
+              connectOrCreate: {
+                where: {
+                  id: vkUser.vk_user_id,
+                },
+                create: {
+                  id: vkUser.vk_user_id,
+                },
+              },
+            },
           },
         });
 
@@ -415,9 +442,32 @@ export class StudentsController {
   @ApiOkResponse({ description: "Student logged out successfully" })
   @UseVkUser()
   async logout(@VkUserParam() vkUser: VkUser, @Res() res: Response) {
-    await this.prisma.students.delete({
+    const foundVkUser = await this.prisma.vkUser.findUnique({
       where: {
-        id: Number(vkUser.vk_user_id),
+        id: vkUser.vk_user_id,
+      },
+    });
+
+    if (!foundVkUser) {
+      throw new NotFoundException();
+    }
+
+    const foundStudent = await this.prisma.students.findFirst({
+      where: {
+        vkUserId: vkUser.vk_user_id,
+      },
+    });
+
+    if (!foundStudent) {
+      throw new NotFoundException();
+    }
+
+    await this.prisma.students.update({
+      where: {
+        id: foundStudent.id,
+      },
+      data: {
+        vkUserId: null,
       },
     });
 
@@ -430,12 +480,10 @@ export class StudentsController {
     type: [String],
   })
   @UseGuards(StudentGuard)
-  async getStudentSemesters(@StudentParam() student: StudentEntity) {
+  async getStudentSemesters(@StudentParam() student: StudentParamType) {
     const data = await this.prisma.marks.findMany({
       where: {
-        student: {
-          id: student.id,
-        },
+        studentId: student.id,
       },
       select: {
         semester: true,
@@ -469,7 +517,7 @@ export class StudentsController {
   async getOne(@Param("id") id: number) {
     const student = await this.prisma.students.findUnique({
       where: {
-        id,
+        id: id,
       },
     });
 

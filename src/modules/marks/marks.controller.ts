@@ -1,12 +1,14 @@
 import { Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { MarkEntity } from "../../entities/mark.entity";
-import { StudentGuard } from "../../common/guards/student.guard";
+import {
+  StudentGuard,
+  StudentParamType,
+} from "../../common/guards/student.guard";
 import {
   StudentParam,
   UseStudent,
 } from "../../common/decorators/student.decorator";
-import { StudentEntity } from "../../entities/student.entity";
 import { PrismaService } from "../../prisma.service";
 
 @Controller("marks")
@@ -20,28 +22,28 @@ export class MarksController {
     description: "Returns true if student has notifications enabled",
     type: Boolean,
   })
-  notify(@StudentParam() student: StudentEntity) {
-    return student.notify;
+  notify(@StudentParam() student: StudentParamType) {
+    return student.VkUser.notify;
   }
 
   @Post("/notify")
-  @UseGuards(StudentGuard)
+  @UseStudent()
   @ApiOkResponse({
     description: "Switch notifications for student",
     type: Boolean,
   })
-  async switchNotify(@StudentParam() student: StudentEntity) {
+  async switchNotify(@StudentParam() student: StudentParamType) {
     student.notify = !student.notify;
-    await this.prisma.students.update({
+    await this.prisma.vkUser.update({
       where: {
-        id: student.id,
+        id: student.VkUser.id,
       },
       data: {
         notify: student.notify,
       },
     });
 
-    return student.notify;
+    return student.VkUser.notify;
   }
 
   @Get(":semester")
@@ -51,7 +53,7 @@ export class MarksController {
     type: [MarkEntity],
   })
   async getSemesterMarks(
-    @StudentParam() student: StudentEntity,
+    @StudentParam() student: StudentParamType,
     @Param("semester") semester: string
   ) {
     return this.prisma.marks.findMany({

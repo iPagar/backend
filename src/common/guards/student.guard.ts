@@ -4,12 +4,15 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { StudentEntity } from "../../entities/student.entity";
-import { Repository } from "typeorm";
 import { extractVkUserFromHeader } from "./vk-user.guard";
 import { PrismaService } from "../../prisma.service";
 import { Reflector } from "@nestjs/core";
+import { Prisma, VkUser, students } from "@prisma/client";
+
+export type StudentParamType = students & {
+  VkUser: VkUser;
+  vkUserId: string;
+};
 
 @Injectable()
 export class StudentGuard implements CanActivate {
@@ -26,13 +29,16 @@ export class StudentGuard implements CanActivate {
     const vkUser = extractVkUserFromHeader(request);
 
     if (vkUser) {
-      const student = await this.prisma.students.findUnique({
+      const student = await this.prisma.students.findFirst({
         where: {
-          id: Number(vkUser.vk_user_id),
+          vkUserId: vkUser.vk_user_id,
+        },
+        include: {
+          VkUser: true,
         },
       });
 
-      if (!student) {
+      if (!student || !student.VkUser) {
         if (required) {
           throw new UnauthorizedException();
         }

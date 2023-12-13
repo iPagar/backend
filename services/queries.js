@@ -189,14 +189,14 @@ function getStudentRatingAndNumberInTheListBySemester(id, semester) {
   return new Promise((resolve, reject) =>
     pool.query(
       `with allratings as (
-        select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, ratings.rating, ratings.semester 
+        select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, "vkUserId", ratings.rating, ratings.semester 
         from students 
-        inner join ratings on ratings.id = students.id 
+        inner join ratings on ratings.id = students.id
         where students.is_deleted != TRUE 
           and semester = ($2) 
           and stgroup not like CONCAT('%', 'Тест','%') 
       )
-      select distinct number, id, stgroup, rating
+      select distinct number, id, stgroup, rating, "vkUserId"
       from allratings
       where id = ($1)
       order by number asc`,
@@ -215,7 +215,7 @@ function getRating(semester, search, page, limit) {
   return new Promise((resolve, reject) => {
     const queryData = `with allratings as (
         select ROW_number() over (order by ratings.rating desc) as number,
-               students.surname, students.id, students.stgroup, 
+               students.surname, students.id, students.stgroup, "vkUserId",
                ratings.rating, ratings.semester 
         from students 
         inner join ratings on ratings.id = students.id 
@@ -223,7 +223,7 @@ function getRating(semester, search, page, limit) {
           and semester = $1 
           and stgroup not like CONCAT('%', 'Тест','%') 
       ) 
-      select distinct number, id, stgroup, rating 
+      select distinct number, id, stgroup, rating, "vkUserId"
       from allratings 
       where lower(surname) like CONCAT('%', trim(lower($2)),'%') 
          or lower(stgroup) like CONCAT('%', trim(lower($2)),'%') 
@@ -233,7 +233,7 @@ function getRating(semester, search, page, limit) {
       `;
 
     const queryCount = `with allratings as (
-        select students.id, students.stgroup, ratings.rating, ratings.semester, students.surname
+        select students.id, students.stgroup, ratings.rating, ratings.semester, students.surname, "vkUserId"
         from students
         inner join ratings on ratings.id = students.id
         where students.is_deleted != TRUE
@@ -263,7 +263,7 @@ function getRating(semester, search, page, limit) {
 function getAllRating(semester) {
   return new Promise((resolve, reject) =>
     pool.query(
-      `with allratings as (select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, ratings.rating, ratings.semester from students inner join ratings on ratings.id = students.id where students.is_deleted != TRUE and semester = ($1) ) select distinct number, id, stgroup, rating from allratings order by number asc`,
+      `with allratings as (select ROW_number() over (order by ratings.rating desc) as number, students.surname, students.id, students.stgroup, "students.vkUserId", ratings.rating, ratings.semester from students inner join ratings on ratings.id = students.id where students.is_deleted != TRUE and semester = ($1) ) select distinct number, id, stgroup, rating, "vkUserId" from allratings order by number asc`,
       [semester],
       (error, results) => {
         if (error) {
@@ -323,7 +323,7 @@ function deleteRatingById(id, semester) {
 function getRatingStgroup(stgroup, semester) {
   return new Promise((resolve, reject) =>
     pool.query(
-      `select ROW_number() over (order by ratings.rating desc) as number, students.id, ratings.rating from ratings inner join students on ratings.id = students.id where students.is_deleted != TRUE and stgroup = ($1) AND semester = ($2) order by rating desc`,
+      `select ROW_number() over (order by ratings.rating desc) as number, students.id, "vkUserId", ratings.rating from ratings inner join students on ratings.id = students.id where students.is_deleted != TRUE and stgroup = ($1) AND semester = ($2) order by rating desc`,
       [stgroup, semester],
       (error, results) => {
         if (error) {

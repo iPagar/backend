@@ -23,7 +23,6 @@ import {
   StudentParam,
   UseStudent,
 } from "../../common/decorators/student.decorator";
-import { StudentEntity } from "../../entities/student.entity";
 import { PutReactionDto } from "./dto/reaction.dto";
 import { getTeacherDetail } from "./utils/get-teacher-details";
 import { PaginationDto } from "../../common/dto/pagination.dto";
@@ -38,6 +37,7 @@ import {
   PaginationResponseDto,
   paginationResponse,
 } from "../../common/helpers/pagination.helper";
+import { StudentParamType } from "../../common/guards/student.guard";
 
 @Controller("teachers")
 @ApiTags("Teachers")
@@ -51,7 +51,7 @@ export class TeachersController {
     description: "Reaction was successfully updated",
   })
   async putReaction(
-    @StudentParam() student: StudentEntity,
+    @StudentParam() student: StudentParamType,
     @Body() body: PutReactionDto,
     @Param("teacherId") teacherId: string
   ) {
@@ -73,9 +73,7 @@ export class TeachersController {
           teachers: {
             id: teacherId,
           },
-          students: {
-            id: student.id,
-          },
+          vkUserId: student.vkUserId,
         },
       }
     );
@@ -83,10 +81,7 @@ export class TeachersController {
     if (foundReaction) {
       await this.prismaService.teachers_reactions.update({
         where: {
-          id_name: {
-            id: foundReaction.id,
-            name: foundReaction.name,
-          },
+          id: foundReaction.id,
         },
         data: {
           reaction,
@@ -101,9 +96,9 @@ export class TeachersController {
               id: teacherId,
             },
           },
-          students: {
+          vkUser: {
             connect: {
-              id: student.id,
+              id: student.vkUserId,
             },
           },
         },
@@ -117,7 +112,7 @@ export class TeachersController {
   })
   @UseStudent()
   async deleteReaction(
-    @StudentParam() student: StudentEntity,
+    @StudentParam() student: StudentParamType,
     @Param("teacherId") teacherId: string
   ) {
     const foundTeacher = await this.prismaService.teachers.findUnique({
@@ -136,8 +131,8 @@ export class TeachersController {
           teachers: {
             id: teacherId,
           },
-          students: {
-            id: student.id,
+          vkUser: {
+            id: student.vkUserId,
           },
         },
       }
@@ -146,10 +141,7 @@ export class TeachersController {
     if (foundReaction) {
       await this.prismaService.teachers_reactions.delete({
         where: {
-          id_name: {
-            id: foundReaction.id,
-            name: foundReaction.name,
-          },
+          id: foundReaction.id,
         },
       });
     }
@@ -176,7 +168,7 @@ export class TeachersController {
   })
   async getComments(
     @Param("teacherId") teacherId: string,
-    @StudentParam() student?: StudentEntity
+    @StudentParam() student?: StudentParamType
   ): Promise<(PublicCommentDto | PrivateCommentDto)[]> {
     const foundTeacher = await this.prismaService.teachers.findUnique({
       where: {
@@ -194,20 +186,17 @@ export class TeachersController {
           id: teacherId,
         },
       },
-      include: {
-        students: true,
-      },
     });
 
     const richByMy = comments.map((comment) => ({
       ...comment,
-      my: student ? comment.students.id === student.id : false,
+      my: student ? comment.vkUserId === student.vkUserId : false,
     }));
     const formatted = richByMy.map((comment) => {
       if (comment.is_public) {
         return {
           comment: comment.comment,
-          vkId: comment.id,
+          vkId: comment.vkUserId,
           my: comment.my,
           type: "public",
           createdAt: comment.created_at,
@@ -231,7 +220,7 @@ export class TeachersController {
     description: "Comment was successfully updated",
   })
   async putComment(
-    @StudentParam() student: StudentEntity,
+    @StudentParam() student: StudentParamType,
     @Param("teacherId") teacherId: string,
     @Body() body: PutCommentDto
   ) {
@@ -247,9 +236,7 @@ export class TeachersController {
 
     const foundComment = await this.prismaService.teachers_comments.findFirst({
       where: {
-        students: {
-          id: student.id,
-        },
+        vkUserId: student.VkUser.id,
         teachers: {
           id: teacherId,
         },
@@ -259,10 +246,8 @@ export class TeachersController {
     if (foundComment) {
       await this.prismaService.teachers_comments.update({
         where: {
-          id_name: {
-            id: foundComment.id,
-            name: foundComment.name,
-          },
+          name: foundComment.name,
+          id: foundComment.id,
         },
         data: {
           comment: body.comment,
@@ -274,7 +259,7 @@ export class TeachersController {
         data: {
           comment: body.comment,
           is_public: body.isPublic,
-          id: student.id,
+          vkUserId: student.vkUserId,
           name: foundTeacher.name,
         },
       });
@@ -287,7 +272,7 @@ export class TeachersController {
     description: "Comment was successfully deleted",
   })
   async deleteComment(
-    @StudentParam() student: StudentEntity,
+    @StudentParam() student: StudentParamType,
     @Param("teacherId") teacherId: string
   ) {
     const foundTeacher = await this.prismaService.teachers.findUnique({
@@ -305,9 +290,7 @@ export class TeachersController {
         teachers: {
           id: teacherId,
         },
-        students: {
-          id: student.id,
-        },
+        vkUserId: student.vkUserId,
       },
     });
 
@@ -317,10 +300,7 @@ export class TeachersController {
 
     await this.prismaService.teachers_comments.delete({
       where: {
-        id_name: {
-          id: foundComment.id,
-          name: foundComment.name,
-        },
+        id: foundComment.id,
       },
     });
   }
@@ -343,7 +323,7 @@ export class TeachersController {
   async getTeachers(
     @Query() paginationDto: PaginationDto,
     @Query("name") name?: string,
-    @StudentParam() student?: StudentEntity
+    @StudentParam() student?: StudentParamType
   ): Promise<PaginationResponseDto<TeacherDto>> {
     const { page, limit } = paginationDto;
     const teachers = await this.prismaService.$transaction(
@@ -367,7 +347,7 @@ export class TeachersController {
           },
           include: {
             teachers: true,
-            students: true,
+            vkUser: true,
           },
         });
         const comments = await tx.teachers_comments.findMany({
@@ -380,7 +360,7 @@ export class TeachersController {
           },
           include: {
             teachers: true,
-            students: true,
+            vkUser: true,
           },
         });
         const richByReactions = teachers.map((teacher) => {
@@ -408,7 +388,7 @@ export class TeachersController {
                 },
                 count: acc.count + 1,
                 my: student
-                  ? reaction.students.id === student.id
+                  ? reaction.vkUserId === student.vkUserId
                     ? reactionName
                     : null
                   : null,
@@ -445,7 +425,7 @@ export class TeachersController {
                 ...acc,
                 count: acc.count + 1,
                 my: student
-                  ? comment.students.id === student.id
+                  ? comment.vkUserId === student.vkUserId
                     ? true
                     : false
                   : false,
