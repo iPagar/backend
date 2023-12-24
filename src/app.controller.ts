@@ -42,4 +42,10 @@ export class AppController {
   async mongoBackup() {
     await this.backupService.createBackup();
   }
+
+  @Post("pg-backup")
+  @UseAdmin()
+  async mongoPgBackup() {
+    await this.backupService.createPgBackup();
+  }
 }
