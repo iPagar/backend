@@ -37,7 +37,13 @@ export class BackupService {
 
     try {
       const args = [
-        "--archive=" + path.join(pathBackup, "mongoBackup.archive"),
+        "--archive=" +
+          path.join(
+            pathBackup,
+            "mongoBackup" +
+              (process.env.NODE_ENV === "production" ? "" : `-dev`) +
+              ".archive"
+          ),
         "--gzip",
         "--uri=" + process.env.MONGO_URL,
       ];
@@ -54,12 +60,20 @@ export class BackupService {
       mongodump.on("close", async (code) => {
         if (code === 0) {
           await this.uploadToS3(
-            `${pathBackup}/mongoBackup.archive`,
+            `${pathBackup}/mongoBackup` +
+              (process.env.NODE_ENV === "production" ? "" : `-dev`) +
+              `.archive`,
             process.env.AWS_BUCKET_NAME!,
-            "mongoBackup.archive"
+            "mongoBackup" +
+              (process.env.NODE_ENV === "production" ? "" : `-dev`) +
+              ".archive"
           );
           // remove file
-          fs.unlinkSync(`${pathBackup}/mongoBackup.archive`);
+          fs.unlinkSync(
+            `${pathBackup}/mongoBackup` +
+              (process.env.NODE_ENV === "production" ? "" : `-dev`) +
+              `.archive`
+          );
 
           console.log("Резервное копирование успешно выполнено");
         } else {
@@ -89,7 +103,10 @@ export class BackupService {
     }
 
     try {
-      const backupFileName = "postgresBackup.tar.gz";
+      const backupFileName =
+        "postgresBackup" +
+        (process.env.NODE_ENV === "production" ? "" : `-dev`) +
+        ".tar.gz";
       const backupPath = path.join(pathBackup, backupFileName);
 
       // Команда для создания резервной копии PostgreSQL
@@ -149,5 +166,116 @@ export class BackupService {
     };
 
     await this.s3.upload(params).promise();
+  }
+
+  async restoreMongoBackup() {
+    console.log("Начало восстановления MongoDB");
+
+    try {
+      const backupFileName =
+        "mongoBackup" +
+        (process.env.NODE_ENV === "production" ? "" : `-dev`) +
+        ".archive";
+      const localFilePath = path.join(process.cwd(), "backup", backupFileName);
+      await this.downloadFromS3(
+        process.env.AWS_BUCKET_NAME!,
+        backupFileName,
+        localFilePath
+      );
+
+      const args = [
+        "--archive=" + localFilePath,
+        "--gzip",
+        "--drop",
+        "--uri=" + process.env.MONGO_URL,
+      ];
+
+      const mongorestore = spawn("mongorestore", args);
+
+      mongorestore.stdout.on("data", (data) => {
+        console.log(`stdout: ${data}`);
+      });
+
+      mongorestore.stderr.on("data", (data) => {
+        console.error(`stderr: ${data}`);
+      });
+
+      mongorestore.on("close", (code) => {
+        if (code === 0) {
+          console.log("Восстановление MongoDB успешно завершено");
+        } else {
+          console.error("Ошибка во время восстановления MongoDB");
+        }
+
+        // Удаление локального файла резервной копии после восстановления
+        fs.unlinkSync(localFilePath);
+      });
+    } catch (error) {
+      console.error("Ошибка во время восстановления MongoDB:", error);
+    }
+  }
+
+  async restorePgBackup() {
+    console.log("Начало восстановления PostgreSQL");
+
+    try {
+      const backupFileName =
+        "postgresBackup" +
+        (process.env.NODE_ENV === "production" ? "" : `-dev`) +
+        ".tar.gz";
+      const localFilePath = path.join(process.cwd(), "backup", backupFileName);
+      await this.downloadFromS3(
+        process.env.AWS_BUCKET_NAME!,
+        backupFileName,
+        localFilePath
+      );
+
+      const args = [
+        "-d",
+        process.env.DB_URL!, // URL подключения к базе данных
+        "-c", // Очистка объектов базы данных перед восстановлением
+        "--clean",
+        "-j",
+        "8", // Использование до 8 параллельных потоков при восстановлении
+        localFilePath, // Путь к файлу резервной копии
+      ];
+
+      const pgRestore = spawn("pg_restore", args);
+
+      pgRestore.stdout.on("data", (data) => {
+        console.log(`stdout: ${data}`);
+      });
+
+      pgRestore.stderr.on("data", (data) => {
+        console.error(`stderr: ${data}`);
+      });
+
+      pgRestore.on("close", (code) => {
+        if (code === 0) {
+          console.log("Восстановление PostgreSQL успешно завершено");
+        } else {
+          console.error("Ошибка во время восстановления PostgreSQL");
+        }
+
+        // Удаление локального файла резервной копии после восстановления
+        fs.unlinkSync(localFilePath);
+      });
+    } catch (error) {
+      console.error("Ошибка во время восстановления PostgreSQL:", error);
+    }
+  }
+
+  private async downloadFromS3(
+    bucketName: string,
+    s3Key: string,
+    localPath: string
+  ) {
+    const params = {
+      Bucket: bucketName,
+      Key: s3Key,
+    };
+
+    const data = await this.s3.getObject(params).promise();
+    fs.writeFileSync(localPath, data.Body as Buffer);
   }
 }
