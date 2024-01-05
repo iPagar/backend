@@ -8,7 +8,7 @@ const pool = new Pool({
 function getStudent(id) {
   return new Promise((resolve, reject) =>
     pool.query(
-      "SELECT student, surname, initials, stgroup, id, notify FROM students WHERE id = ($1) and is_deleted != TRUE",
+      `SELECT id, "vkUserId", surname, initials, stgroup, notify FROM students WHERE "vkUserId" = ($1)`,
       [id],
       (error, results) => {
         if (error) {

@@ -506,7 +506,7 @@ function getAllModules(semester, subject, module) {
 
 async function getMarksHistory(id) {
   const student = await db.getStudent(id);
-  return db.getMarksHistory(student.student);
+  return db.getMarksHistory(student.id);
 }
 
 function getRatingStgroup(id, semester) {
