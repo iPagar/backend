@@ -5,6 +5,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Post,
   Put,
   Query,
 } from "@nestjs/common";
@@ -38,6 +39,7 @@ import {
   paginationResponse,
 } from "../../common/helpers/pagination.helper";
 import { StudentParamType } from "../../common/guards/student.guard";
+import { UseAdmin } from "../../common/decorators/admin.decorator";
 
 @Controller("teachers")
 @ApiTags("Teachers")
@@ -464,6 +466,12 @@ export class TeachersController {
       data: richByDetails,
       total: teachers.total,
     };
+  }
+
+  @Post("update")
+  @UseAdmin()
+  requestUpdateTeachers() {
+    return this.updateTeachers();
   }
 
   // every week
