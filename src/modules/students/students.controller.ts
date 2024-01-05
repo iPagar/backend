@@ -79,7 +79,8 @@ export class StudentsController {
 
     if (foundStudent) {
       const { password, ...rest } = foundStudent;
-      return { ...rest };
+      // TODO: delete student after update
+      return { ...rest, student: foundStudent.id };
     }
 
     throw new NotFoundException();
