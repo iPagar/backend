@@ -133,6 +133,7 @@ export async function getTeacherDetail(name: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(optionsSearchInfo.body),
+      timeout: 1000,
     });
     const infoResponse = searchInfoResponse.data as any;
 
