@@ -106,7 +106,7 @@ async function updateStudent(semester, stud, isLast) {
 
     if (updatedMarks && updatedMarks.length > 0 && notify) {
       const notifyText = await makeNotifyText(
-        id,
+        studentId,
         updatedMarks,
         semester,
         isLast
@@ -115,7 +115,12 @@ async function updateStudent(semester, stud, isLast) {
         studentId,
         semester,
       });
-      await bot.sendMessage(id, notifyText.text, null, notifyText.keyboard);
+      await bot.sendMessage(
+        vkUserId,
+        notifyText.text,
+        null,
+        notifyText.keyboard
+      );
       logger.info(`Sent message to student`, {
         studentId,
         semester,
@@ -130,7 +135,7 @@ async function updateStudent(semester, stud, isLast) {
   }
 }
 
-async function makeNotifyText(id, updatedMarks, semester, isLast) {
+async function makeNotifyText(studentId, updatedMarks, semester, isLast) {
   let text = "";
 
   if (updatedMarks.length && !isLast) text += `${semester}\n\n`;
@@ -168,7 +173,7 @@ async function makeNotifyText(id, updatedMarks, semester, isLast) {
       });
   });
 
-  const rating = await db.getRatingById(id, semester);
+  const rating = await db.getRatingById(studentId, semester);
 
   const keyboard = Markup.keyboard(
     [
