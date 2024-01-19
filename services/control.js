@@ -12,9 +12,15 @@ const bot = new VkBot({
 });
 
 // running a task every
-cron.schedule("0 7-19/2 * * *", () => {
-  update();
-});
+cron.schedule(
+  "0 7-19/2 * * *",
+  () => {
+    update();
+  },
+  {
+    scheduled: process.env.NODE_ENV === "production",
+  }
+);
 
 async function update() {
   const started = new Date().toISOString();
