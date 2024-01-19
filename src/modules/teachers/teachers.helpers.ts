@@ -113,8 +113,6 @@ export async function getTeachersFromWebsite(): Promise<Teacher[]> {
 }
 
 export async function getTeacherDetail(name: string) {
-  const path = "https://stankin.ru/api_entry.php";
-
   const optionsSearchInfo = {
     body: {
       action: "search",
@@ -128,14 +126,23 @@ export async function getTeacherDetail(name: string) {
   };
 
   try {
-    const searchInfoResponse = await teacherAxios.post("", {
-      headers: {
-        "Content-Type": "application/json",
+    const searchInfoResponse = await teacherAxios.post(
+      "",
+      {
+        ...optionsSearchInfo.body,
       },
-      body: JSON.stringify(optionsSearchInfo.body),
-      timeout: 1000,
-    });
+      {
+        timeout: 1000,
+        "axios-retry": {
+          retries: 0,
+        },
+      }
+    );
     const infoResponse = searchInfoResponse.data as any;
+
+    if (typeof infoResponse === "string") {
+      return {};
+    }
 
     if (infoResponse) {
       if (infoResponse.data.founded.length > 0) {
@@ -144,22 +151,27 @@ export async function getTeacherDetail(name: string) {
           infoResponse.data.founded[0].payload.subdivision_id;
 
         const optionsTeacherInfo = {
-          method: "POST",
-          uri: path,
           body: {
             action: "getStuff",
             data: { subdivision_id: subdivisionId },
           },
-          json: true,
         };
-        const teacherInfoResponse = await fetch(path, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const teacherInfoResponse = await teacherAxios.post(
+          "",
+          {
+            ...optionsTeacherInfo.body,
           },
-          body: JSON.stringify(optionsTeacherInfo.body),
-        });
-        const teacherResponse = (await teacherInfoResponse.json()) as any;
+          {
+            timeout: 1000,
+            "axios-retry": {
+              retries: 0,
+            },
+          }
+        );
+        const teacherResponse = teacherInfoResponse.data as any;
+        if (typeof teacherResponse === "string") {
+          return {};
+        }
         if (teacherResponse) {
           const { email, phone, avatar } = teacherResponse.data.filter(
             (row: any) => row.user.id === id
