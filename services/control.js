@@ -11,8 +11,8 @@ const bot = new VkBot({
   token: process.env.VK_BOT,
 });
 
-// running a task every hour
-cron.schedule("0 * * * *", () => {
+// running a task every
+cron.schedule("0 7-19/2 * * *", () => {
   update();
 });
 
