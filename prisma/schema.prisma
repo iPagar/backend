@@ -90,12 +90,19 @@ model sch {
   stgroup String @db.VarChar(20)
 }
 
-model schoolarship {
+model SchoolarshipFiles {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   start_date DateTime @db.Timestamp(6)
-  type       Int      @db.SmallInt
-  value      Int?     @db.SmallInt
+  end_date   DateTime @db.Timestamp(6)
+  url        String
+}
 
-  @@id([start_date, type])
+model schoolarship {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  start_date DateTime @db.Timestamp(6)
+  end_date   DateTime @db.Timestamp(6)
+  type       Int      @db.SmallInt
+  value      Int      @db.SmallInt
 }
 
 model semesters {

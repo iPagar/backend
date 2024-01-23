@@ -3,6 +3,7 @@ import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { PrismaService } from "./prisma.service";
 import { BackupService } from "../services/backup-mongo";
 import { UseAdmin } from "./common/decorators/admin.decorator";
+import { SchoolarshipDto } from "./dto/schoolarship";
 
 @Controller("app")
 @ApiTags("App")
@@ -35,6 +36,21 @@ export class AppController {
         // Если годы одинаковые, сравниваем сезоны (весна перед осенью)
         return partsA[1] === "весна" ? -1 : 1;
       });
+  }
+
+  @Get("schoolarship")
+  @ApiOkResponse({
+    description: "Schoolarship retrieved successfully",
+    type: SchoolarshipDto,
+  })
+  async getSchoolarship() {
+    const files = await this.prismaService.schoolarshipFiles.findMany();
+    const schoolarship = await this.prismaService.schoolarship.findMany();
+
+    return {
+      files,
+      schoolarship,
+    };
   }
 
   @Post("mongo-backup")
