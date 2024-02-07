@@ -1,16 +1,19 @@
-import { Controller, Get, Post } from "@nestjs/common";
-import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Get, Post } from "@nestjs/common";
+import { ApiBody, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { PrismaService } from "./prisma.service";
 import { BackupService } from "../services/backup-mongo";
 import { UseAdmin } from "./common/decorators/admin.decorator";
 import { SchoolarshipDto } from "./dto/schoolarship";
+import { ScheduleService } from "../services/schedule-service";
+import { UpdateScheduleDto } from "./dto/schedule";
 
 @Controller("app")
 @ApiTags("App")
 export class AppController {
   constructor(
     private prismaService: PrismaService,
-    private backupService: BackupService
+    private backupService: BackupService,
+    private scheduleService: ScheduleService
   ) {}
 
   @Get("semesters")
@@ -75,5 +78,40 @@ export class AppController {
   @UseAdmin()
   async mongoPgRestore() {
     await this.backupService.restorePgBackup();
+  }
+
+  @Post("update-schedule")
+  @ApiBody({
+    description: "Update schedule",
+    type: UpdateScheduleDto,
+    examples: {
+      "application/json": {
+        value: {
+          steps: [
+            {
+              courseExp: "Бакалавриат",
+              folderExp: "^1 курс$|^2 курс$|^3 курс$|^4 курс$",
+            },
+            {
+              courseExp: "Специалитет",
+              folderExp: "Расписание занятий",
+            },
+            {
+              courseExp: "Магистратура",
+              folderExp: "^1 курс$|^2 курс",
+            },
+            {
+              courseExp: "Аспирантура",
+              folderExp: "Расписание",
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiOkResponse({ description: "Student logged in successfully" })
+  @UseAdmin()
+  async updateSchedule(@Body() updateScheduleDto: UpdateScheduleDto) {
+    await this.scheduleService.updateSchedule(updateScheduleDto);
   }
 }
