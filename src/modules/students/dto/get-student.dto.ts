@@ -63,6 +63,9 @@ export class StudentRatingDto {
   @ApiProperty()
   id: number;
 
+  @ApiProperty()
+  vkUserId: string;
+
   @ApiProperty({
     type: String,
     nullable: true,
