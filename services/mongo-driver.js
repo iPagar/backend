@@ -18,6 +18,32 @@ const mongo = new MongoClient(url, {
     return db;
   });
 
+// TODO: remove
+function updateLessonsHoursDate() {
+  return mongo.then(async (client) => {
+    return client.collection("lessons").updateMany({}, [
+      {
+        $set: {
+          start_date: {
+            $dateAdd: {
+              startDate: "$start_date",
+              unit: "hour",
+              amount: 2,
+            },
+          },
+          end_date: {
+            $dateAdd: {
+              startDate: "$end_date",
+              unit: "hour",
+              amount: 2,
+            },
+          },
+        },
+      },
+    ]);
+  });
+}
+
 const insertLessons = function (lessons) {
   return mongo.then(async (client) => {
     return client.collection("lessons").insertMany(lessons);
