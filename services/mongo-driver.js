@@ -28,14 +28,14 @@ function updateLessonsHoursDate() {
             $dateAdd: {
               startDate: "$start_date",
               unit: "hour",
-              amount: 2,
+              amount: 1,
             },
           },
           end_date: {
             $dateAdd: {
               startDate: "$end_date",
               unit: "hour",
-              amount: 2,
+              amount: 1,
             },
           },
         },
