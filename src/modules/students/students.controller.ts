@@ -231,9 +231,9 @@ export class StudentsController {
 
       return {
         ...student,
-        photo: vkUser?.photo_200,
-        firstName: vkUser?.first_name,
-        lastName: vkUser?.last_name,
+        photo: vkUser?.photo_200 ?? null,
+        firstName: vkUser?.first_name ?? null,
+        lastName: vkUser?.last_name ?? null,
         stgroup: student.number,
       };
     });
@@ -287,9 +287,9 @@ export class StudentsController {
 
       return {
         ...student,
-        photo: vkUser?.photo_200,
-        firstName: vkUser?.first_name,
-        lastName: vkUser?.last_name,
+        photo: vkUser?.photo_200 ?? null,
+        firstName: vkUser?.first_name ?? null,
+        lastName: vkUser?.last_name ?? null,
       };
     });
 

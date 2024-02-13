@@ -2,20 +2,22 @@ require("reflect-metadata");
 // load env
 require("dotenv").config();
 // express
-const express = require("express");
+import express from "express";
 // cors and fs
-const cors = require("cors");
-const http = require("http");
+import cors from "cors";
 // securing
-const helmet = require("helmet");
-const check = require("vkui-sign-checker");
+import helmet from "helmet";
+import check from "vkui-sign-checker";
 // loggers and error handlers
-const createError = require("http-errors");
-const { expressLogger } = require("./config/winston");
-
+import createError from "http-errors";
+import { expressLogger } from "./config/winston";
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 app.use(
   express.urlencoded({ limit: "1mb", parameterLimit: 500, extended: true })
@@ -30,26 +32,33 @@ app.disable("x-powered-by");
 app.use((req, res, next) => {
   // if request has api then next
   if (req.path.includes("/api")) return next();
+  if (req.path.includes("/admin")) return next();
 
-  const xSignHeader = req.headers[`x-sign-header`].slice(1);
+  const xSignHeader = req.headers[`x-sign-header`]?.slice(1);
 
   check(xSignHeader, process.env.VK_SECURE_MODULI)
-    .then((params) => {
+    .then((params: any) => {
       req.body = { params, ...req.body };
       next();
     })
     .catch(() => {
       check(xSignHeader, process.env.VK_SECURE_SCHEDULE)
-        .then((params) => {
+        .then((params: any) => {
           req.body = { params, ...req.body };
           next();
         })
         .catch(() => {
           try {
-            const { id, sign } = xSignHeader
+            if (typeof xSignHeader !== "string")
+              throw new Error("Not a string");
+
+            const { id, sign } = (xSignHeader as any)
               .split("&")
-              .map((param) => param.split("="))
-              .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+              .map((param: any) => param.split("="))
+              .reduce(
+                (acc: any, [key, value]: any) => ({ ...acc, [key]: value }),
+                {}
+              );
 
             if (sign === process.env.TEST_SIGN) {
               req.body = { params: { vk_user_id: id }, ...req.body };
@@ -63,10 +72,10 @@ app.use((req, res, next) => {
 });
 
 // modules
-const manage = require("./routes/manage");
-const schedule = require("./routes/schedule");
-const teachers = require("./routes/teachers");
-const ol = require("./routes/ol");
+import manage from "./routes/manage";
+import schedule from "./routes/schedule";
+import teachers from "./routes/teachers";
+import ol from "./routes/ol";
 
 app.use([manage, schedule, teachers, ol]);
 

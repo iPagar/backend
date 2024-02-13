@@ -1,7 +1,13 @@
 import * as fs from "fs";
-import { parse } from "rector-schedule-parser";
+
+export async function loadParse() {
+  const { parse } = await import("rector-schedule-parser");
+
+  return { parse };
+}
 
 async function parseFile(path: string) {
+  const { parse } = await loadParse();
   const lessons = await parse(path);
   return lessons
     .map((lesson) => {
@@ -92,4 +98,4 @@ async function getFile(path: string) {
   return { filename, file, parsed, fileCreatedAt };
 }
 
-export { getFile, parse };
+export { getFile };
