@@ -10,6 +10,7 @@ import { TeachersModule } from "./modules/teachers/teachers.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { BackupService } from "../services/backup-mongo";
 import { ScheduleService } from "../services/schedule-service";
+import { StudentScheduleModule } from "./modules/student-schedule/student-schedule.module";
 dotenv.config();
 
 @Module({
@@ -23,6 +24,7 @@ dotenv.config();
     StudentsModule,
     MarksModule,
     TeachersModule,
+    StudentScheduleModule,
   ],
   providers: [PrismaService, BackupService, ScheduleService],
   controllers: [AppController],

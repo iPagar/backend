@@ -87,8 +87,9 @@ async function getFile(path: string) {
   const filename = path.match(/(?<name>[А-яа-я\d-() ]*)\.pdf/)!.groups!.name;
 
   const file = await fileToBuffer(path);
+  const fileCreatedAt = new Date(fs.statSync(path).birthtime);
   const parsed = await parseFile(path);
-  return { filename, file, parsed };
+  return { filename, file, parsed, fileCreatedAt };
 }
 
 export { getFile, parse };

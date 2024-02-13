@@ -24,6 +24,8 @@ const mongo = new MongoClient(url, {
   .catch((e) => {
     // eslint-disable-next-line no-console
     console.log(e);
+
+    throw e;
   });
 
 module.exports = { postgres, mongo };

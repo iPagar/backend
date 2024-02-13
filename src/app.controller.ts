@@ -87,6 +87,8 @@ export class AppController {
     examples: {
       "application/json": {
         value: {
+          year: 2024,
+          season: "spring",
           steps: [
             {
               courseExp: "Бакалавриат",

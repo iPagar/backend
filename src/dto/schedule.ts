@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { IsEnum } from "class-validator";
 
 export class UpdateCourseDto {
   @ApiProperty()
@@ -13,4 +14,13 @@ export class UpdateScheduleDto {
     type: [UpdateCourseDto],
   })
   steps: UpdateCourseDto[];
+
+  @ApiProperty({
+    enum: ["spring", "autumn"],
+  })
+  @IsEnum(["spring", "autumn"])
+  season: "spring" | "autumn";
+
+  @ApiProperty()
+  year: number;
 }
